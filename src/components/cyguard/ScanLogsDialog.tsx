@@ -1,4 +1,3 @@
-
 import type { FC } from 'react';
 import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -91,7 +90,7 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
   const getRiskLevelVariant = (level: AnalyzeSecurityLogOutput['overallRiskLevel'] | PotentialThreatSchema['severity']) => {
     switch (level) {
       case 'critical': return 'destructive';
-      case 'high': return 'destructive'; // Could add custom orange variant for 'high' if desired
+      case 'high': return 'destructive';
       case 'medium': return 'secondary'; 
       case 'low': return 'default';
       case 'informational': return 'outline';
@@ -103,7 +102,7 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
      switch (level) {
       case 'critical':
       case 'high':
-        return <AlertTriangle className="h-4 w-4 mr-1.5" />; // Removed destructive-foreground for Badge variant to handle color
+        return <AlertTriangle className="h-4 w-4 mr-1.5" />;
       case 'medium':
         return <Activity className="h-4 w-4 mr-1.5" />; 
       case 'low':
@@ -112,13 +111,12 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
       default:
         return <ShieldCheck className="h-4 w-4 mr-1.5" />;
     }
-  }
-
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-      <DialogContent className={view === 'form' 
-        ? "sm:max-w-2xl md:max-w-3xl lg:max-w-4xl" 
+      <DialogContent className={view === 'form'
+        ? "sm:max-w-2xl md:max-w-3xl lg:max-w-4xl"
         : "sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col"
       }>
         {view === 'form' && (
@@ -175,29 +173,31 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
         {view === 'result' && analysisResult && (
           <>
             <DialogHeader>
-               <DialogTitle className="flex items-center gap-2">
-                 <FileText className="h-5 w-5 text-primary" />
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
                 Log Analysis Report
               </DialogTitle>
               <DialogDescription>
                 CyGuard has analyzed the provided log data. Review the findings below.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-hidden">
-              <ScrollArea className="h-full pr-3">
-                <div className="space-y-5 py-3">
+            <div className="flex-grow flex flex-col">
+              <ScrollArea className="h-full flex-1">
+                <div className="space-y-5 py-3 pr-3">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-lg flex items-center">
                         Overall Assessment
                         <Badge variant={getRiskLevelVariant(analysisResult.overallRiskLevel)} className="ml-auto text-xs px-2.5 py-1 capitalize">
-                           {getRiskLevelIcon(analysisResult.overallRiskLevel)}
+                          {getRiskLevelIcon(analysisResult.overallRiskLevel)}
                           {analysisResult.overallRiskLevel}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                        {analysisResult.summary}
+                      </p>
                     </CardContent>
                   </Card>
 
@@ -219,13 +219,17 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
                                 {threat.severity}
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-1"><span className="font-medium text-foreground/80">Recommendation:</span> {threat.recommendation}</p>
+                            <p className="text-xs text-muted-foreground mb-1 break-words">
+                              <span className="font-medium text-foreground/80">Recommendation:</span> {threat.recommendation}
+                            </p>
                             {threat.evidence && threat.evidence.length > 0 && (
                               <div>
                                 <p className="text-xs font-medium text-foreground/80 mb-0.5">Evidence:</p>
-                                <ul className="list-disc list-inside pl-1 space-y-0.5">
+                                <ul className="space-y-0.5">
                                   {threat.evidence.map((ev, idx) => (
-                                    <li key={idx} className="text-xs text-muted-foreground font-mono bg-background/50 px-1.5 py-0.5 rounded-sm truncate" title={ev}>{ev}</li>
+                                    <li key={idx} className="text-xs text-muted-foreground font-mono bg-background/50 px-1.5 py-0.5 rounded-sm break-words whitespace-pre-wrap">
+                                      {ev}
+                                    </li>
                                   ))}
                                 </ul>
                               </div>
@@ -237,17 +241,17 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
                   )}
 
                   {analysisResult.keyObservations && analysisResult.keyObservations.length > 0 && (
-                     <Card>
+                    <Card>
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
                           <Activity className="h-5 w-5 text-primary" />
                           Key Observations
-                          </CardTitle>
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                           {analysisResult.keyObservations.map((obs, index) => (
-                            <li key={index}>{obs}</li>
+                            <li key={index} className="break-words">{obs}</li>
                           ))}
                         </ul>
                       </CardContent>
@@ -265,13 +269,12 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
                       <CardContent>
                         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                           {analysisResult.actionableRecommendations.map((rec, index) => (
-                            <li key={index}>{rec}</li>
+                            <li key={index} className="break-words">{rec}</li>
                           ))}
                         </ul>
                       </CardContent>
                     </Card>
                   )}
-
                 </div>
               </ScrollArea>
             </div>
@@ -287,25 +290,21 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
             </DialogFooter>
           </>
         )}
-        {view === 'result' && isAnalyzing && ( // Show loading dots if somehow in result view but still analyzing
-            <div className="flex-grow flex justify-center items-center py-10">
-                <LoadingDots /> <span className="ml-2">Analyzing...</span>
-            </div>
+        {view === 'result' && isAnalyzing && (
+          <div className="flex-grow flex justify-center items-center py-10">
+            <LoadingDots /> <span className="ml-2">Analyzing...</span>
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
 };
 
-// Helper type, assuming PotentialThreatSchema is defined in analyze-security-log-flow.ts and imported if needed
-// For simplicity, defining a minimal version here if it's not directly available.
-// In a real case, you'd import { PotentialThreatSchema } from '@/ai/flows/analyze-security-log-flow';
-// and then type PotentialThreat = z.infer<typeof PotentialThreatSchema>;
-// However, to avoid circular dependencies or complex imports for this styling fix, we'll use a local helper.
 interface PotentialThreatSchema {
   severity: "low" | "medium" | "high" | "critical";
-  // other fields...
+  description: string;
+  recommendation: string;
+  evidence?: string[];
 }
-
 
 export default ScanLogsDialog;

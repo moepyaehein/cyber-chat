@@ -89,7 +89,7 @@ const ThreatIntelDialog: FC<ThreatIntelDialogProps> = ({ isOpen, onOpenChange })
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BarChartBig className="h-5 w-5 text-primary" />
@@ -100,7 +100,7 @@ const ThreatIntelDialog: FC<ThreatIntelDialogProps> = ({ isOpen, onOpenChange })
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-grow overflow-hidden">
+        <div>
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
               <LoadingDots />
@@ -123,7 +123,7 @@ const ThreatIntelDialog: FC<ThreatIntelDialogProps> = ({ isOpen, onOpenChange })
             </div>
           )}
           {!isLoading && !error && alerts.length > 0 && (
-            <ScrollArea className="h-full pr-2">
+            <ScrollArea className="flex-1 overflow-y-auto pr-2">
               <div className="space-y-3 py-1">
                 {alerts.map((alert) => (
                   <Card key={alert.id} className="shadow-md hover:shadow-lg transition-shadow duration-200">
