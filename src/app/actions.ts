@@ -1,7 +1,9 @@
+
 'use server';
 
 import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat';
 import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
+import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
 import { z } from 'zod';
 
 const userInputSchema = z.object({
@@ -83,5 +85,16 @@ export async function handleLogAnalysis(
   } catch (error) {
     console.error("Error calling analyzeSecurityLog flow:", error);
     return { success: false, error: "Sorry, I encountered an issue analyzing the logs. Please try again." };
+  }
+}
+
+
+export async function handleFetchThreatIntel(): Promise<{ success: true; data: FetchThreatIntelOutput } | { success: false; error: string }> {
+  try {
+    const intelData = await fetchThreatIntel({}); // Empty input for now
+    return { success: true, data: intelData };
+  } catch (error) {
+    console.error("Error calling fetchThreatIntel flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue fetching threat intelligence. Please try again." };
   }
 }
