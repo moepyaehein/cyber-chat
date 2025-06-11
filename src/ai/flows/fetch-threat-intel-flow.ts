@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z}  from 'genkit';
 import { v4 as uuidv4 } from 'uuid';
 
-export const ThreatIntelAlertSchema = z.object({
+const ThreatIntelAlertSchema = z.object({
   id: z.string().describe("Unique identifier for the alert."),
   title: z.string().describe("Title of the threat intelligence alert."),
   summary: z.string().describe("A brief summary of the alert."),
@@ -107,3 +107,4 @@ const fetchThreatIntelFlow = ai.defineFlow(
     return { alerts: mockAlerts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
   }
 );
+
