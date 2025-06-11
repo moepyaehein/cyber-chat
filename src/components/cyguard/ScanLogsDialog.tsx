@@ -88,27 +88,27 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
     }
   };
 
-  const getRiskLevelVariant = (level: AnalyzeSecurityLogOutput['overallRiskLevel']) => {
+  const getRiskLevelVariant = (level: AnalyzeSecurityLogOutput['overallRiskLevel'] | PotentialThreatSchema['severity']) => {
     switch (level) {
       case 'critical': return 'destructive';
-      case 'high': return 'destructive';
-      case 'medium': return 'secondary'; // Or a custom yellow/orange
+      case 'high': return 'destructive'; // Could add custom orange variant for 'high' if desired
+      case 'medium': return 'secondary'; 
       case 'low': return 'default';
       case 'informational': return 'outline';
       default: return 'outline';
     }
   };
   
-  const getRiskLevelIcon = (level: AnalyzeSecurityLogOutput['overallRiskLevel']) => {
+  const getRiskLevelIcon = (level: AnalyzeSecurityLogOutput['overallRiskLevel'] | PotentialThreatSchema['severity']) => {
      switch (level) {
       case 'critical':
       case 'high':
-        return <AlertTriangle className="h-4 w-4 mr-1.5 text-destructive-foreground" />;
+        return <AlertTriangle className="h-4 w-4 mr-1.5" />; // Removed destructive-foreground for Badge variant to handle color
       case 'medium':
-        return <Activity className="h-4 w-4 mr-1.5 text-secondary-foreground" />; // Consider a yellow icon
+        return <Activity className="h-4 w-4 mr-1.5" />; 
       case 'low':
       case 'informational':
-        return <CheckCircle className="h-4 w-4 mr-1.5 text-primary-foreground" />;
+        return <CheckCircle className="h-4 w-4 mr-1.5" />;
       default:
         return <ShieldCheck className="h-4 w-4 mr-1.5" />;
     }
@@ -117,7 +117,10 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh]">
+      <DialogContent className={view === 'form' 
+        ? "sm:max-w-2xl md:max-w-3xl lg:max-w-4xl" 
+        : "sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col"
+      }>
         {view === 'form' && (
           <>
             <DialogHeader>
@@ -172,7 +175,7 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
         {view === 'result' && analysisResult && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+               <DialogTitle className="flex items-center gap-2">
                  <FileText className="h-5 w-5 text-primary" />
                 Log Analysis Report
               </DialogTitle>
@@ -180,94 +183,99 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
                 CyGuard has analyzed the provided log data. Review the findings below.
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[calc(90vh-200px)] pr-3"> {/* Adjusted max height */}
-              <div className="space-y-5 py-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center">
-                      Overall Assessment
-                      <Badge variant={getRiskLevelVariant(analysisResult.overallRiskLevel)} className="ml-auto text-xs px-2.5 py-1">
-                         {getRiskLevelIcon(analysisResult.overallRiskLevel)}
-                        {analysisResult.overallRiskLevel.toUpperCase()}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
-                  </CardContent>
-                </Card>
-
-                {analysisResult.potentialThreats && analysisResult.potentialThreats.length > 0 && (
+            <div className="flex-grow overflow-hidden">
+              <ScrollArea className="h-full pr-3">
+                <div className="space-y-5 py-3">
                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-destructive" />
-                        Potential Threats Identified
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg flex items-center">
+                        Overall Assessment
+                        <Badge variant={getRiskLevelVariant(analysisResult.overallRiskLevel)} className="ml-auto text-xs px-2.5 py-1 capitalize">
+                           {getRiskLevelIcon(analysisResult.overallRiskLevel)}
+                          {analysisResult.overallRiskLevel}
+                        </Badge>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      {analysisResult.potentialThreats.map((threat, index) => (
-                        <div key={index} className="p-3 border rounded-md bg-muted/30">
-                          <div className="flex justify-between items-center mb-1">
-                            <h4 className="font-semibold text-sm">{threat.description}</h4>
-                            <Badge variant={getRiskLevelVariant(threat.severity)} className="text-xs">{threat.severity.toUpperCase()}</Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1"><span className="font-medium text-foreground/80">Recommendation:</span> {threat.recommendation}</p>
-                          {threat.evidence && threat.evidence.length > 0 && (
-                            <div>
-                              <p className="text-xs font-medium text-foreground/80 mb-0.5">Evidence:</p>
-                              <ul className="list-disc list-inside pl-1 space-y-0.5">
-                                {threat.evidence.map((ev, idx) => (
-                                  <li key={idx} className="text-xs text-muted-foreground font-mono bg-background/50 px-1.5 py-0.5 rounded-sm truncate" title={ev}>{ev}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{analysisResult.summary}</p>
                     </CardContent>
                   </Card>
-                )}
 
-                {analysisResult.keyObservations && analysisResult.keyObservations.length > 0 && (
-                   <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Activity className="h-5 w-5 text-primary" />
-                        Key Observations
+                  {analysisResult.potentialThreats && analysisResult.potentialThreats.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-destructive" />
+                          Potential Threats Identified
                         </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                        {analysisResult.keyObservations.map((obs, index) => (
-                          <li key={index}>{obs}</li>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {analysisResult.potentialThreats.map((threat, index) => (
+                          <div key={index} className="p-3 border rounded-md bg-muted/30">
+                            <div className="flex justify-between items-center mb-1">
+                              <h4 className="font-semibold text-sm">{threat.description}</h4>
+                              <Badge variant={getRiskLevelVariant(threat.severity)} className="text-xs capitalize">
+                                {getRiskLevelIcon(threat.severity)}
+                                {threat.severity}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1"><span className="font-medium text-foreground/80">Recommendation:</span> {threat.recommendation}</p>
+                            {threat.evidence && threat.evidence.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-foreground/80 mb-0.5">Evidence:</p>
+                                <ul className="list-disc list-inside pl-1 space-y-0.5">
+                                  {threat.evidence.map((ev, idx) => (
+                                    <li key={idx} className="text-xs text-muted-foreground font-mono bg-background/50 px-1.5 py-0.5 rounded-sm truncate" title={ev}>{ev}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                {analysisResult.actionableRecommendations && analysisResult.actionableRecommendations.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <ListChecks className="h-5 w-5 text-green-500" />
-                        Actionable Recommendations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                        {analysisResult.actionableRecommendations.map((rec, index) => (
-                          <li key={index}>{rec}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              </div>
-            </ScrollArea>
-            <DialogFooter className="mt-4">
+                  {analysisResult.keyObservations && analysisResult.keyObservations.length > 0 && (
+                     <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-primary" />
+                          Key Observations
+                          </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                          {analysisResult.keyObservations.map((obs, index) => (
+                            <li key={index}>{obs}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {analysisResult.actionableRecommendations && analysisResult.actionableRecommendations.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <ListChecks className="h-5 w-5 text-green-500" />
+                          Actionable Recommendations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                          {analysisResult.actionableRecommendations.map((rec, index) => (
+                            <li key={index}>{rec}</li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                </div>
+              </ScrollArea>
+            </div>
+            <DialogFooter className="mt-auto pt-4 border-t">
               <Button type="button" onClick={resetDialogState}>
                 Analyze More Logs
               </Button>
@@ -279,8 +287,8 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
             </DialogFooter>
           </>
         )}
-        {view === 'result' && isAnalyzing && (
-            <div className="flex justify-center items-center py-10">
+        {view === 'result' && isAnalyzing && ( // Show loading dots if somehow in result view but still analyzing
+            <div className="flex-grow flex justify-center items-center py-10">
                 <LoadingDots /> <span className="ml-2">Analyzing...</span>
             </div>
         )}
@@ -288,5 +296,16 @@ const ScanLogsDialog: FC<ScanLogsDialogProps> = ({ isOpen, onOpenChange }) => {
     </Dialog>
   );
 };
+
+// Helper type, assuming PotentialThreatSchema is defined in analyze-security-log-flow.ts and imported if needed
+// For simplicity, defining a minimal version here if it's not directly available.
+// In a real case, you'd import { PotentialThreatSchema } from '@/ai/flows/analyze-security-log-flow';
+// and then type PotentialThreat = z.infer<typeof PotentialThreatSchema>;
+// However, to avoid circular dependencies or complex imports for this styling fix, we'll use a local helper.
+interface PotentialThreatSchema {
+  severity: "low" | "medium" | "high" | "critical";
+  // other fields...
+}
+
 
 export default ScanLogsDialog;

@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { handlePhishingReport, type ClientMessage } from '@/app/actions'; // ClientMessage might not be directly needed, but AssessThreatOutput is.
+import { handlePhishingReport } from '@/app/actions';
 import type { AssessThreatOutput } from '@/ai/flows/assess-threat';
 import ThreatLevelIndicator from './ThreatLevelIndicator';
 import ActionStepsList from './ActionStepsList';
@@ -90,7 +90,7 @@ const ReportPhishingDialog: FC<ReportPhishingDialogProps> = ({ isOpen, onOpenCha
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className={view === 'form' ? "sm:max-w-lg" : "sm:max-w-lg max-h-[90vh] flex flex-col"}>
         {view === 'form' && (
           <>
             <DialogHeader>
@@ -148,19 +148,21 @@ const ReportPhishingDialog: FC<ReportPhishingDialogProps> = ({ isOpen, onOpenCha
                 CyGuard has analyzed the content you submitted.
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
-              <div className="space-y-4 py-2">
-                <ThreatLevelIndicator level={assessmentResult.threatLevel} />
-                <div>
-                  <h4 className="font-semibold text-sm mb-1">AI Response:</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-md">
-                    {assessmentResult.response}
-                  </p>
+            <div className="flex-grow overflow-hidden">
+              <ScrollArea className="h-full pr-4">
+                <div className="space-y-4 py-2">
+                  <ThreatLevelIndicator level={assessmentResult.threatLevel} />
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">AI Response:</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-md">
+                      {assessmentResult.response}
+                    </p>
+                  </div>
+                  <ActionStepsList steps={assessmentResult.actionSteps} />
                 </div>
-                <ActionStepsList steps={assessmentResult.actionSteps} />
-              </div>
-            </ScrollArea>
-            <DialogFooter>
+              </ScrollArea>
+            </div>
+            <DialogFooter className="mt-auto pt-4 border-t">
               <Button type="button" onClick={resetDialogState}>
                 Report Another
               </Button>
@@ -172,8 +174,8 @@ const ReportPhishingDialog: FC<ReportPhishingDialogProps> = ({ isOpen, onOpenCha
             </DialogFooter>
           </>
         )}
-         {view === 'result' && isAnalyzing && ( // Show loading dots if somehow in result view but still analyzing (should not happen)
-            <div className="flex justify-center items-center py-10">
+         {view === 'result' && isAnalyzing && ( // Show loading dots if somehow in result view but still analyzing
+            <div className="flex-grow flex justify-center items-center py-10">
                 <LoadingDots /> <span className="ml-2">Analyzing...</span>
             </div>
         )}
