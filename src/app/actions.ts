@@ -28,10 +28,8 @@ export async function handleUserMessage(
   try {
     const aiResponse = await assessThreat({ user_input: parsedInput.data.message });
     
-    // The AI response includes the main text, threat level, and action steps.
-    // We use aiResponse.response as the main chat text from the AI.
     return {
-      id: messageId, // Use the client-generated ID for the AI response message
+      id: messageId,
       sender: 'ai',
       text: aiResponse.response,
       threatAssessment: aiResponse,
@@ -40,5 +38,27 @@ export async function handleUserMessage(
   } catch (error) {
     console.error("Error calling assessThreat flow:", error);
     return { error: "Sorry, I encountered an issue processing your request. Please try again." };
+  }
+}
+
+const phishingReportSchema = z.object({
+  content: z.string().min(10, "Report content is too short.").max(5000, "Report content is too long."),
+});
+
+export async function handlePhishingReport(
+  reportContent: string
+): Promise<{ success: true; assessment: AssessThreatOutput } | { success: false; error: string }> {
+  const parsedReport = phishingReportSchema.safeParse({ content: reportContent });
+
+  if (!parsedReport.success) {
+    return { success: false, error: parsedReport.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await assessThreat({ user_input: parsedReport.data.content });
+    return { success: true, assessment: aiResponse };
+  } catch (error) {
+    console.error("Error calling assessThreat flow for phishing report:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the report. Please try again." };
   }
 }
