@@ -1,6 +1,7 @@
 'use server';
 
 import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat';
+import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
 import { z } from 'zod';
 
 const userInputSchema = z.object({
@@ -60,5 +61,27 @@ export async function handlePhishingReport(
   } catch (error) {
     console.error("Error calling assessThreat flow for phishing report:", error);
     return { success: false, error: "Sorry, I encountered an issue analyzing the report. Please try again." };
+  }
+}
+
+const securityLogSchema = z.object({
+  logContent: z.string().min(10, "Log content is too short.").max(10000, "Log content is too long. Please provide a smaller snippet or break it into parts."),
+});
+
+export async function handleLogAnalysis(
+  logContent: string
+): Promise<{ success: true; analysis: AnalyzeSecurityLogOutput } | { success: false; error: string }> {
+  const parsedLog = securityLogSchema.safeParse({ logContent });
+
+  if (!parsedLog.success) {
+    return { success: false, error: parsedLog.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeSecurityLog({ logContent: parsedLog.data.logContent });
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeSecurityLog flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the logs. Please try again." };
   }
 }
