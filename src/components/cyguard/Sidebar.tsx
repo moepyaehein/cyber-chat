@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from "react";
@@ -9,18 +10,30 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface SidebarProps {}
 
 const Sidebar: FC<SidebarProps> = () => {
+  const { toast } = useToast(); // Initialize useToast
+
   const handleQuickAction = (action: string) => {
-    console.log(`Quick action: ${action}`);
-    // Here you would typically call a function or navigate
+    // console.log(`Quick action: ${action}`); // Keep console log for debugging if needed
+    toast({
+      title: "Action Triggered",
+      description: `${action} action has been initiated.`,
+    });
+    // In a real application, you would call a function or navigate here
+    // For example:
+    // if (action === "Report Phishing") {
+    //   // openReportPhishingDialog();
+    // } else if (action === "Scan Logs") {
+    //   // navigateToScanLogsPage();
+    // }
   };
 
   return (
@@ -64,8 +77,11 @@ const Sidebar: FC<SidebarProps> = () => {
       </SidebarContent>
       <SidebarFooter className="p-2 items-center flex-row justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-2">
          <ThemeToggle />
-         <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8" 
-            onClick={() => console.log("Logout clicked")}
+         <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+            onClick={() => {
+              toast({ title: "Logout Requested", description: "Logout functionality to be implemented."});
+              console.log("Logout clicked");
+            }}
             aria-label="Logout"
           >
             <LogOut className="h-5 w-5" />
