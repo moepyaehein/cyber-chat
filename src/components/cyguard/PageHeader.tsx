@@ -1,15 +1,17 @@
-import { Shield } from 'lucide-react';
 import type { FC } from 'react';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface PageHeaderProps {}
 
 const PageHeader: FC<PageHeaderProps> = () => {
   return (
-    <header className="bg-primary text-primary-foreground py-4 px-6 shadow-md sticky top-0 z-50">
-      <div className="container mx-auto flex items-center gap-3">
-        <Shield className="h-8 w-8" />
-        <h1 className="text-2xl font-headline font-semibold">CyGuard</h1>
-        <span className="text-sm opacity-90 font-body hidden sm:inline">- Your Cyber Guardian</span>
+    <header className="bg-background/80 backdrop-blur-sm border-b border-border py-3 px-4 md:px-6 sticky top-0 z-40">
+      <div className="container mx-auto flex items-center gap-3 max-w-4xl">
+        <SidebarTrigger className="md:hidden" />
+        {/* Title can be here if needed, or kept in sidebar */}
+        {/* <h1 className="text-xl font-semibold text-foreground">CyGuard Chat</h1> */}
+        <div className="flex-grow" /> {/* Spacer */}
+        {/* ThemeToggle is now in SidebarFooter, can be moved here if preferred */}
       </div>
     </header>
   );

@@ -27,20 +27,29 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
     {
       id: uuidv4(),
       sender: 'ai',
-      text: "Hello! I'm CyGuard. How can I help you assess a potential online threat today? Paste any suspicious message or link below.",
+      text: "Hello! I'm CyGuard. How can I help you assess a potential online threat today? Paste any suspicious message or link below. For example, try:\n```json\n{\n  \"url\": \"http://suspicious-site.com/login.php\",\n  \"email_sender\": \"attacker@phish.net\"\n}\n```",
       isLoading: false,
     }
   ]);
   const { toast } = useToast();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null); // Changed to target viewport for ScrollArea
 
   const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<ChatFormValues>({
     resolver: zodResolver(chatFormSchema),
   });
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    if (scrollViewportRef.current) {
+      // Access the viewport element directly if ScrollArea passes it via ref
+      // For ShadCN ScrollArea, the ref is on the Root, viewport is internal.
+      // A common pattern is to get the first child of the ScrollArea for the scrollable content.
+      const viewport = scrollViewportRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+      } else {
+         // Fallback for direct div if not using ShadCN's viewport structure
+         scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+      }
     }
   }, [messages]);
   
@@ -67,7 +76,7 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
     const aiThinkingMessage: ChatMessageType = {
       id: aiThinkingMessageId,
       sender: 'ai',
-      text: '', // Placeholder, will be updated or replaced
+      text: '', 
       isLoading: true,
     };
 
@@ -82,9 +91,8 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
         description: result.error,
         variant: 'destructive',
       });
-      setMessages(prev => prev.filter(msg => msg.id !== aiThinkingMessageId)); // Remove thinking message
+      setMessages(prev => prev.filter(msg => msg.id !== aiThinkingMessageId)); 
     } else {
-       // Replace the thinking message with the actual AI response
       setMessages(prevMessages => 
         prevMessages.map(msg => msg.id === aiThinkingMessageId ? { ...result, id: aiThinkingMessageId } : msg)
       );
@@ -92,24 +100,24 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <ScrollArea className="flex-grow p-4 md:p-6" ref={scrollAreaRef}>
-        <div className="space-y-4">
+    <div className="flex flex-col h-full bg-transparent"> {/* Changed bg-background to transparent */}
+      <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}> {/* Use ref here */}
+        <div className="space-y-1 pb-4"> {/* Reduced space-y */}
           {messages.map((msg) => (
             <ChatMessageItem key={msg.id} message={msg} />
           ))}
         </div>
       </ScrollArea>
-      <div className="border-t border-border p-4 bg-card shadow- ऊपर">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-3">
+      <div className="border-t border-border p-3 md:p-4 bg-card/50 backdrop-blur-sm shadow- ऊपर">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2 md:gap-3">
           <Input
             {...register('message')}
             placeholder="Type your suspicious message or link here..."
-            className="flex-grow text-base"
+            className="flex-grow text-sm bg-background/70 focus:bg-background"
             autoComplete="off"
             disabled={isSubmitting}
           />
-          <Button type="submit" size="icon" disabled={isSubmitting} aria-label="Send message">
+          <Button type="submit" size="icon" disabled={isSubmitting} aria-label="Send message" className="shrink-0">
             <SendHorizontal className="h-5 w-5" />
           </Button>
         </form>
