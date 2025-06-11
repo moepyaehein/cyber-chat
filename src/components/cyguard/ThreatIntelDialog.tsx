@@ -190,4 +190,3 @@ const ThreatIntelDialog: FC<ThreatIntelDialogProps> = ({ isOpen, onOpenChange })
 };
 
 export default ThreatIntelDialog;
-
