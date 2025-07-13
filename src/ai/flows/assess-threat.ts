@@ -60,7 +60,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 {{#if history}}
 Conversation History:
 {{#each history}}
-- {{this.role}}: {{{this.content}}}
+- {{role}}: {{{content}}}
 {{/each}}
 {{/if}}
 
@@ -83,3 +83,4 @@ const assessThreatFlow = ai.defineFlow(
     return output!;
   }
 );
+
