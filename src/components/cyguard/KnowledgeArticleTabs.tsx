@@ -46,13 +46,15 @@ const ArticleList: FC<ArticleListProps> = ({ articles }) => (
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl">{article.title}</DialogTitle>
-            <DialogDescription as="div" className="flex flex-col sm:flex-row gap-x-4 gap-y-1 text-xs items-start sm:items-center">
-              <Badge variant="secondary" className="capitalize w-fit">{article.difficulty}</Badge>
-              <div className="flex flex-wrap items-center gap-1.5 pt-1 sm:pt-0">
-                <Tag className="h-3 w-3" />
-                {article.tags.map(tag => (
-                    <Badge key={tag} variant="outline" className="px-1.5 py-0.5 font-normal">{tag}</Badge>
-                ))}
+            <DialogDescription asChild>
+              <div className="flex flex-col sm:flex-row gap-x-4 gap-y-1 text-xs items-start sm:items-center">
+                <Badge variant="secondary" className="capitalize w-fit">{article.difficulty}</Badge>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 sm:pt-0">
+                  <Tag className="h-3 w-3" />
+                  {article.tags.map(tag => (
+                      <Badge key={tag} variant="outline" className="px-1.5 py-0.5 font-normal">{tag}</Badge>
+                  ))}
+                </div>
               </div>
             </DialogDescription>
           </DialogHeader>
