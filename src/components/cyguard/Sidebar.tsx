@@ -14,19 +14,21 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn } from "lucide-react";
+import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import ReportPhishingDialog from "./ReportPhishingDialog";
 import ScanLogsDialog from "./ScanLogsDialog";
 import ThreatIntelDialog from "./ThreatIntelDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePathname } from "next/navigation";
 
 interface SidebarProps {}
 
 const Sidebar: FC<SidebarProps> = () => {
   const { toast } = useToast();
   const { user, signOut, loading } = useAuth();
+  const pathname = usePathname();
   const [isReportPhishingOpen, setIsReportPhishingOpen] = useState(false);
   const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
@@ -59,41 +61,65 @@ const Sidebar: FC<SidebarProps> = () => {
     <>
       <ShadSidebar collapsible="icon" variant="sidebar" side="left">
         <SidebarHeader className="items-center justify-center p-4">
-          <Shield className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
-          <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">
-            CyGuard
-          </h1>
+            <Link href="/" className="flex items-center justify-center gap-2">
+                <Shield className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
+                <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">
+                    CyGuard
+                </h1>
+            </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
           {user && !loading && (
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => handleQuickAction("Report Phishing")}
-                  tooltip={{children: "Report Phishing", side: "right", align:"center"}}
-                >
-                  <FileWarning />
-                  <span>Report Phishing</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => handleQuickAction("Scan Logs")}
-                  tooltip={{children: "Scan Logs", side: "right", align:"center"}}
-                >
-                  <ScanLine />
-                  <span>Scan Logs</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => handleQuickAction("Threat Intel")}
-                  tooltip={{children: "Threat Intel", side: "right", align:"center"}}
-                >
-                  <BrainCircuit />
-                  <span>Threat Intel</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <Link href="/" legacyBehavior passHref>
+                        <SidebarMenuButton
+                        isActive={pathname === '/'}
+                        tooltip={{children: "Chat", side: "right", align:"center"}}
+                        >
+                        <Home />
+                        <span>Chat</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <Link href="/knowledge" legacyBehavior passHref>
+                        <SidebarMenuButton
+                        isActive={pathname.startsWith('/knowledge')}
+                        tooltip={{children: "Knowledge Base", side: "right", align:"center"}}
+                        >
+                        <GraduationCap />
+                        <span>Knowledge Base</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                    onClick={() => handleQuickAction("Report Phishing")}
+                    tooltip={{children: "Report Phishing", side: "right", align:"center"}}
+                    >
+                    <FileWarning />
+                    <span>Report Phishing</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                    onClick={() => handleQuickAction("Scan Logs")}
+                    tooltip={{children: "Scan Logs", side: "right", align:"center"}}
+                    >
+                    <ScanLine />
+                    <span>Scan Logs</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                    onClick={() => handleQuickAction("Threat Intel")}
+                    tooltip={{children: "Threat Intel", side: "right", align:"center"}}
+                    >
+                    <BrainCircuit />
+                    <span>Threat Intel</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
             </SidebarMenu>
           )}
           {!user && !loading && (
