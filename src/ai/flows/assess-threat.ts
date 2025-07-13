@@ -11,8 +11,14 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const ChatMessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+});
+
 const AssessThreatInputSchema = z.object({
   user_input: z.string().describe('The suspicious message or link to be assessed.'),
+  history: z.array(ChatMessageSchema).optional().describe('The conversation history.'),
 });
 export type AssessThreatInput = z.infer<typeof AssessThreatInputSchema>;
 
@@ -42,20 +48,31 @@ const prompt = ai.definePrompt({
 You must be friendly, clear, and professional. Your tone should be reassuring but firm on security and privacy matters.
 
 **Core Instructions:**
-1.  **Analyze the Threat:** Based on the user's input, assess the potential threat level on a scale of 0 (safe) to 10 (extremely risky).
+1.  **Analyze the Threat:** Based on the user's input, assess the potential threat level on a scale of 0 (safe) to 10 (extremely risky). If the current input is a follow-up question, base your analysis on the context of the whole conversation.
 2.  **Provide Actionable Steps:** Give the user a clear, numbered list of actions they should take to mitigate the risk.
 3.  **Privacy First:**
     *   **Never** ask the user for personally identifiable information (PII) like passwords, real names, addresses, or credit card numbers.
     *   **Always** include a privacy assessment. Briefly explain any privacy risks related to their query (e.g., "The link you provided seems to be a phishing attempt designed to steal login credentials.") and gently remind them to avoid sharing sensitive information online.
     *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in messages like this. Here's my assessment..."
-4.  **Be Conversational:** Engage in a natural way. If the user's query is unclear, you can ask clarifying questions, but do so without requesting sensitive data.
+4.  **Be Conversational:** Engage in a natural way. Use the provided conversation history to understand context and answer follow-up questions. If the user's query is unclear, you can ask clarifying questions, but do so without requesting sensitive data.
 
-Here is the user's message:
+{{#if history}}
+Conversation History:
+{{#each history}}
+  {{#if (eq this.role "user")}}
+User: {{{this.content}}}
+  {{else}}
+CyGuard: {{{this.content}}}
+  {{/if}}
+{{/each}}
+{{/if}}
+
+Here is the user's latest message:
 \`\`\`
 {{{user_input}}}
 \`\`\`
 
-Based on this, provide your full analysis.`,
+Based on this, and the history if provided, provide your full analysis.`,
 });
 
 const assessThreatFlow = ai.defineFlow(

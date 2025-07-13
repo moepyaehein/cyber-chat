@@ -80,10 +80,18 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
       isLoading: true,
     };
 
-    setMessages(prevMessages => [...prevMessages, userMessage, aiThinkingMessage]);
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages.concat(aiThinkingMessage));
     reset();
 
-    const result = await handleUserMessage(aiThinkingMessageId, data.message);
+    const history = currentMessages
+      .filter(m => !m.isLoading) // Exclude any lingering loading messages
+      .map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        content: m.text,
+      }));
+
+    const result = await handleUserMessage(aiThinkingMessageId, data.message, history);
 
     if ('error' in result) {
       toast({

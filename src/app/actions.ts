@@ -10,6 +10,11 @@ const userInputSchema = z.object({
   message: z.string().min(1, "Message cannot be empty.").max(2000, "Message too long."),
 });
 
+const chatHistorySchema = z.array(z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+}));
+
 export interface ClientMessage {
   id: string;
   sender: 'user' | 'ai';
@@ -20,16 +25,25 @@ export interface ClientMessage {
 
 export async function handleUserMessage(
   messageId: string,
-  userInput: string
+  userInput: string,
+  history: { role: 'user' | 'model'; content: string }[]
 ): Promise<ClientMessage | { error: string }> {
   const parsedInput = userInputSchema.safeParse({ message: userInput });
 
   if (!parsedInput.success) {
     return { error: parsedInput.error.errors.map(e => e.message).join(', ') };
   }
+  
+  const parsedHistory = chatHistorySchema.safeParse(history);
+  if (!parsedHistory.success) {
+     return { error: "Invalid chat history format." };
+  }
 
   try {
-    const aiResponse = await assessThreat({ user_input: parsedInput.data.message });
+    const aiResponse = await assessThreat({ 
+      user_input: parsedInput.data.message,
+      history: parsedHistory.data,
+    });
     
     return {
       id: messageId,
@@ -58,6 +72,7 @@ export async function handlePhishingReport(
   }
 
   try {
+    // Phishing report is a one-shot analysis, so no history is passed.
     const aiResponse = await assessThreat({ user_input: parsedReport.data.content });
     return { success: true, assessment: aiResponse };
   } catch (error) {
