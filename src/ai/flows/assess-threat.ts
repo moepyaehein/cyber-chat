@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -59,11 +60,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 {{#if history}}
 Conversation History:
 {{#each history}}
-  {{#if (eq this.role "user")}}
-User: {{{this.content}}}
-  {{else}}
-CyGuard: {{{this.content}}}
-  {{/if}}
+- {{this.role}}: {{{this.content}}}
 {{/each}}
 {{/if}}
 
