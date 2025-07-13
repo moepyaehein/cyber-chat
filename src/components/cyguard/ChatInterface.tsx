@@ -27,7 +27,7 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
     {
       id: uuidv4(),
       sender: 'ai',
-      text: "Hello! I'm CyGuard. How can I help you assess a potential online threat today? Paste any suspicious message or link below. For example, try:\n```json\n{\n  \"url\": \"http://suspicious-site.com/login.php\",\n  \"email_sender\": \"attacker@phish.net\"\n}\n```",
+      text: "Hello! I'm CyGuard, your private cybersecurity assistant. Paste a suspicious message, email, or link below, and I'll analyze it for threats.\n\n**For your privacy, please do not include real names, passwords, or other personal information.**",
       isLoading: false,
     }
   ]);
@@ -112,7 +112,7 @@ const ChatInterface: FC<ChatInterfaceProps> = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2 md:gap-3">
           <Input
             {...register('message')}
-            placeholder="Type your suspicious message or link here..."
+            placeholder="Paste suspicious content here. Avoid personal info."
             className="flex-grow text-sm bg-background/70 focus:bg-background"
             autoComplete="off"
             disabled={isSubmitting}

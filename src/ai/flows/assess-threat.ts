@@ -17,7 +17,7 @@ const AssessThreatInputSchema = z.object({
 export type AssessThreatInput = z.infer<typeof AssessThreatInputSchema>;
 
 const AssessThreatOutputSchema = z.object({
-  response: z.string().describe('A natural language response, with optional follow-up questions.'),
+  response: z.string().describe('A natural language response, with optional follow-up questions. This response must be reassuring and professional, and should never ask for personally identifiable information (PII).'),
   threatLevel: z
     .number()
     .int()
@@ -25,6 +25,7 @@ const AssessThreatOutputSchema = z.object({
     .max(10)
     .describe('A threat level rating from 0 (safe) to 10 (extremely risky).'),
   actionSteps: z.array(z.string()).describe('A numbered list of what the user should do next.'),
+  privacy_assessment: z.string().describe("A brief assessment of the privacy risks associated with the user's input, reminding them to be cautious with their data.")
 });
 export type AssessThreatOutput = z.infer<typeof AssessThreatOutputSchema>;
 
@@ -36,18 +37,25 @@ const prompt = ai.definePrompt({
   name: 'assessThreatPrompt',
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
-  prompt: `You are CyGuard, a smart and interactive cybersecurity assistant. Your job is to help users identify online threats, stay safe, and respond to suspicious activity. Hold natural conversations, ask follow-up questions if needed, and rate the threat level from 0–10 (0 = safe, 10 = extremely risky).
+  prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
-Always be friendly, clear, and focused on safety.
+You must be friendly, clear, and professional. Your tone should be reassuring but firm on security and privacy matters.
+
+**Core Instructions:**
+1.  **Analyze the Threat:** Based on the user's input, assess the potential threat level on a scale of 0 (safe) to 10 (extremely risky).
+2.  **Provide Actionable Steps:** Give the user a clear, numbered list of actions they should take to mitigate the risk.
+3.  **Privacy First:**
+    *   **Never** ask the user for personally identifiable information (PII) like passwords, real names, addresses, or credit card numbers.
+    *   **Always** include a privacy assessment. Briefly explain any privacy risks related to their query (e.g., "The link you provided seems to be a phishing attempt designed to steal login credentials.") and gently remind them to avoid sharing sensitive information online.
+    *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in messages like this. Here's my assessment..."
+4.  **Be Conversational:** Engage in a natural way. If the user's query is unclear, you can ask clarifying questions, but do so without requesting sensitive data.
 
 Here is the user's message:
+\`\`\`
+{{{user_input}}}
+\`\`\`
 
-{{user_input}}
-
-Your Output:
-- Response: [Natural response, with optional follow-up questions]
-- Threat Level: [Number from 0 to 10]
-- Action Steps: [Numbered list of what the user should do next]`,
+Based on this, provide your full analysis.`,
 });
 
 const assessThreatFlow = ai.defineFlow(

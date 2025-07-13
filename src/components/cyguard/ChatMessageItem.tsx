@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BotMessageSquare, UserCircle2, Terminal } from 'lucide-react';
+import { BotMessageSquare, UserCircle2, Terminal, ShieldQuestion } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AssessThreatOutput } from '@/ai/flows/assess-threat';
 import ThreatLevelIndicator from './ThreatLevelIndicator';
@@ -31,37 +31,54 @@ interface TextBlock {
   content: string;
 }
 
-type ParsedContent = (TextBlock | CodeBlock)[];
+interface BoldBlock {
+  type: 'bold';
+  content: string;
+}
 
-// Basic parser for ```code blocks```
-// This could be made more robust, e.g. to handle nested blocks or escaped backticks if needed.
+type ParsedContent = (TextBlock | CodeBlock | BoldBlock)[];
+
+// Enhanced parser for ```code blocks``` and **bold text**
 function parseMessageText(text: string): ParsedContent {
-  const parts: ParsedContent = [];
-  let lastIndex = 0;
-  const regex = /```(\w*)\n([\s\S]*?)\n```/g;
-  let match;
+    const parts: ParsedContent = [];
+    let lastIndex = 0;
+    // Regex to capture ```code blocks```, **bold text**, or plain text.
+    const regex = /(```(\w*)\n([\s\S]*?)\n```|\*\*([^\*]+)\*\*)/g;
+    let match;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+    while ((match = regex.exec(text)) !== null) {
+        // Capture text before the match
+        if (match.index > lastIndex) {
+            parts.push({ type: 'text', content: text.substring(lastIndex, match.index) });
+        }
+
+        // Check if it's a code block
+        if (match[1].startsWith('```')) {
+            parts.push({
+                type: 'code',
+                language: match[2] || undefined,
+                content: match[3].trim(),
+            });
+        }
+        // Check if it's bold text
+        else if (match[1].startsWith('**')) {
+            parts.push({ type: 'bold', content: match[4] });
+        }
+        
+        lastIndex = match.index + match[0].length;
     }
-    parts.push({
-      type: 'code',
-      language: match[1] || undefined,
-      content: match[2].trim(),
-    });
-    lastIndex = match.index + match[0].length;
-  }
 
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.substring(lastIndex) });
-  }
-  
-  if (parts.length === 0 && text.length > 0) {
-    return [{ type: 'text', content: text }];
-  }
+    // Capture any remaining text after the last match
+    if (lastIndex < text.length) {
+        parts.push({ type: 'text', content: text.substring(lastIndex) });
+    }
 
-  return parts;
+    // If no matches were found at all, the whole message is plain text.
+    if (parts.length === 0 && text.length > 0) {
+        return [{ type: 'text', content: text }];
+    }
+
+    return parts;
 }
 
 
@@ -76,7 +93,7 @@ const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
     );
   }
   
-  const parsedContent = isAI ? parseMessageText(message.text) : [{ type: 'text', content: message.text } as TextBlock];
+  const parsedContent = parseMessageText(message.text);
 
   return (
     <div className={cn('flex items-start gap-3 my-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -96,30 +113,44 @@ const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
             <LoadingDots />
           ) : (
             <>
-              {parsedContent.map((block, index) => {
-                if (block.type === 'text') {
-                  return <p key={index} className="whitespace-pre-wrap">{block.content}</p>;
-                }
-                if (block.type === 'code') {
-                  return (
-                    <div key={index} className="my-2 rounded-md bg-code-background text-code-foreground shadow-inner">
-                      {block.language && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border text-xs text-muted-foreground">
-                          <Terminal className="h-3.5 w-3.5" />
-                          <span>{block.language}</span>
-                        </div>
-                      )}
-                      <pre className="p-3 overflow-x-auto">
-                        <code className="font-code text-xs">{block.content}</code>
-                      </pre>
-                    </div>
-                  );
-                }
-                return null;
-              })}
+              <div className="whitespace-pre-wrap">
+                {parsedContent.map((block, index) => {
+                  if (block.type === 'text') {
+                    return <span key={index}>{block.content}</span>;
+                  }
+                  if (block.type === 'bold') {
+                    return <strong key={index}>{block.content}</strong>;
+                  }
+                  if (block.type === 'code') {
+                    return (
+                      <div key={index} className="my-2 rounded-md bg-code-background text-code-foreground shadow-inner">
+                        {block.language && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border text-xs text-muted-foreground">
+                            <Terminal className="h-3.5 w-3.5" />
+                            <span>{block.language}</span>
+                          </div>
+                        )}
+                        <pre className="p-3 overflow-x-auto">
+                          <code className="font-code text-xs">{block.content}</code>
+                        </pre>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
               {isAI && message.threatAssessment && (
-                <div className="mt-3 border-t border-border/70 pt-3">
+                <div className="mt-3 border-t border-border/70 pt-3 space-y-2">
                   <ThreatLevelIndicator level={message.threatAssessment.threatLevel} />
+                  {message.threatAssessment.privacy_assessment && (
+                     <div className="p-3 bg-accent/20 rounded-md shadow-sm">
+                        <h4 className="font-semibold text-xs mb-1 flex items-center gap-1.5 text-accent-foreground/90">
+                            <ShieldQuestion className="h-4 w-4 text-yellow-400" />
+                            Privacy Note:
+                        </h4>
+                        <p className="text-xs text-secondary-foreground/80">{message.threatAssessment.privacy_assessment}</p>
+                     </div>
+                  )}
                   <ActionStepsList steps={message.threatAssessment.actionSteps} />
                 </div>
               )}
