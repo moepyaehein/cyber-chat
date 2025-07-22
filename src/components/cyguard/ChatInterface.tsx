@@ -27,7 +27,7 @@ type ChatFormValues = z.infer<typeof chatFormSchema>;
 const initialMessage: ClientMessage = {
   id: 'initial-message',
   sender: 'ai',
-  text: "Hello! I'm CyGuard. Paste a suspicious message or link below, or use the paperclip icon to analyze a screenshot. Your chat is saved in this browser and you can clear it at any time.",
+  text: "Welcome to CyGuard. I'm your AI security analyst. Paste a suspicious message, link, or use the paperclip to upload a screenshot for analysis. Your chat history is stored only in this browser for your privacy.",
   isLoading: false,
 };
 
@@ -48,7 +48,10 @@ const ChatInterface: FC = () => {
     try {
       const savedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
       if (savedHistory) {
-        setMessages(JSON.parse(savedHistory));
+        const parsedHistory = JSON.parse(savedHistory);
+        if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+            setMessages(parsedHistory);
+        }
       }
     } catch (error) {
       console.error("Failed to load chat history from local storage:", error);
@@ -59,7 +62,9 @@ const ChatInterface: FC = () => {
   // Save chat history to local storage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        if (messages.length > 1) { // Don't save just the initial message
+            localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        }
     } catch (error) {
       console.error("Failed to save chat history to local storage:", error);
     }
@@ -86,7 +91,7 @@ const ChatInterface: FC = () => {
     const userMessage: ClientMessage = {
       id: uuidv4(),
       sender: 'user',
-      text: "Here is the screenshot I uploaded:",
+      text: "I've uploaded a screenshot for analysis.",
       image: imagePreview,
     };
     
