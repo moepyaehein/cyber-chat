@@ -11,21 +11,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Trash2, Paperclip } from 'lucide-react';
+import { SendHorizontal, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import type { ClientMessage } from '@/app/actions';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import AnalyzeScreenshotDialog from './AnalyzeScreenshotDialog';
 import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 
@@ -38,7 +27,7 @@ type ChatFormValues = z.infer<typeof chatFormSchema>;
 const initialMessage: ClientMessage = {
   id: 'initial-message',
   sender: 'ai',
-  text: "Hello! I'm CyGuard. Paste a suspicious message or link below. Your chat is saved in this browser and you can clear it at any time.",
+  text: "Hello! I'm CyGuard. Paste a suspicious message or link below, or use the paperclip icon to analyze a screenshot. Your chat is saved in this browser and you can clear it at any time.",
   isLoading: false,
 };
 
@@ -93,11 +82,6 @@ const ChatInterface: FC = () => {
     }
   }, [errors.message, toast]);
 
-  const handleClearHistory = () => {
-    setMessages([initialMessage]);
-    toast({ title: "Chat Cleared", description: "Your conversation has been cleared from this browser." });
-  };
-  
   const handleScreenshotAnalysisComplete = (analysis: AnalyzeScreenshotOutput, imagePreview: string) => {
     const userMessage: ClientMessage = {
       id: uuidv4(),
@@ -163,30 +147,6 @@ const ChatInterface: FC = () => {
     <div className="flex flex-col h-full bg-transparent">
         <div className="flex-shrink-0 flex items-center justify-between p-3 border-b gap-2">
             <h2 className="text-lg font-semibold truncate pr-4">CyGuard Chat</h2>
-            <div className='flex items-center gap-2'>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" disabled={messages.length <= 1}>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Clear History
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete your current chat history from this browser. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearHistory}>
-                      Yes, clear history
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
         </div>
       <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}>
         <div className="space-y-1 pb-4 pt-4">
