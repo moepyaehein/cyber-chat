@@ -5,7 +5,10 @@ import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat'
 import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
 import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
 import { analyzeWifiNetworks } from '@/ai/flows/analyze-wifi-flow';
+import { analyzeScreenshot } from '@/ai/flows/analyze-screenshot-flow';
 import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput } from '@/ai/schemas/wifi-analysis-schemas';
+import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
+import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
 import { z } from 'zod';
 
 const userInputSchema = z.object({
@@ -131,5 +134,24 @@ export async function handleWifiAnalysis(
   } catch (error) {
     console.error("Error calling analyzeWifiNetworks flow:", error);
     return { success: false, error: "Sorry, I encountered an issue analyzing the Wi-Fi networks. Please try again." };
+  }
+}
+
+export async function handleScreenshotAnalysis(
+  prompt: string,
+  screenshotDataUri: string
+): Promise<{ success: true; analysis: AnalyzeScreenshotOutput } | { success: false; error: string }> {
+  const parsedInput = AnalyzeScreenshotInputSchema.safeParse({ prompt, screenshotDataUri });
+
+  if (!parsedInput.success) {
+    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeScreenshot(parsedInput.data);
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeScreenshot flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the screenshot. Please try again." };
   }
 }
