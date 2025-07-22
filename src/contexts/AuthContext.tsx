@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
       // User will be set by onAuthStateChanged
-      router.push('/'); // Redirect after successful sign-up
+      router.push('/home'); // Redirect after successful sign-up
       return { success: true };
     } catch (error) {
       const authError = error as AuthError;
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       // User will be set by onAuthStateChanged
-      router.push('/'); // Redirect after successful sign-in
+      router.push('/home'); // Redirect after successful sign-in
       return { success: true };
     } catch (error) {
       const authError = error as AuthError;

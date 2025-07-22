@@ -34,6 +34,8 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
   const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
+  const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
+
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -76,9 +78,9 @@ const Sidebar: FC<SidebarProps> = () => {
           {user && !loading && (
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <Link href="/" legacyBehavior passHref>
+                    <Link href="/home" legacyBehavior passHref>
                         <SidebarMenuButton
-                        isActive={pathname === '/'}
+                        isActive={pathname === '/home'}
                         tooltip={{children: "Chat", side: "right", align:"center"}}
                         >
                         <Home />
