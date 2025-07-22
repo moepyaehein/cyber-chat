@@ -173,8 +173,8 @@ export async function handleDataBreachCheck(
   }
 
   try {
-    const aiResponse = await checkDataBreach({ email: parsedEmail.data.email });
-    return { success: true, result: aiResponse };
+    const result = await checkDataBreach({ email: parsedEmail.data.email });
+    return { success: true, result };
   } catch (error) {
     console.error("Error calling checkDataBreach flow:", error);
     return { success: false, error: "Sorry, I encountered an issue checking the email. Please try again." };

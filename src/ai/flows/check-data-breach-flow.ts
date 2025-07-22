@@ -29,6 +29,7 @@ const DataBreachCheckOutputSchema = z.object({
   isBreached: z.boolean().describe("Whether the email was found in any breaches."),
   breaches: z.array(BreachDetailSchema).describe("A list of breach details if the email was found. Empty if not breached."),
   recommendation: z.string().describe("A summary recommendation for the user based on the findings."),
+  emailExists: z.boolean().describe("Whether the email exists in the mock database."),
 });
 export type DataBreachCheckOutput = z.infer<typeof DataBreachCheckOutputSchema>;
 
@@ -73,15 +74,25 @@ const checkDataBreachFlow = ai.defineFlow(
     outputSchema: DataBreachCheckOutputSchema,
   },
   async ({ email }) => {
-    // Simulate checking the database
-    const breaches = mockBreachDatabase[email.toLowerCase()] || [];
-    const isBreached = breaches.length > 0;
+    const lowercasedEmail = email.toLowerCase();
+    const breaches = mockBreachDatabase[lowercasedEmail];
+    const emailExists = breaches !== undefined;
 
+    if (!emailExists) {
+        return {
+            isBreached: false,
+            breaches: [],
+            recommendation: `The email address ${email} does not exist in our mocked database. This does not mean the email is not real, only that we have no breach records for it.`,
+            emailExists: false,
+        };
+    }
+
+    const isBreached = breaches.length > 0;
     let recommendation = "";
     if (isBreached) {
         recommendation = `The email address ${email} was found in ${breaches.length} known breach(es). It is highly recommended to change the passwords for any accounts associated with this email, especially on the services listed. Enable Two-Factor Authentication (2FA) wherever possible.`;
     } else {
-        recommendation = `The email address ${email} was not found in our mocked database of known breaches. Continue to practice good security hygiene by using strong, unique passwords and enabling 2FA.`;
+        recommendation = `The email address ${email} was found in our mocked database but had no associated breaches. Continue to practice good security hygiene by using strong, unique passwords and enabling 2FA.`;
     }
 
     // We don't need an LLM for this mock implementation, just returning structured data.
@@ -89,6 +100,7 @@ const checkDataBreachFlow = ai.defineFlow(
       isBreached,
       breaches,
       recommendation,
+      emailExists: true,
     };
   }
 );

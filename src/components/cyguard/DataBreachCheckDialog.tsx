@@ -22,7 +22,7 @@ import { handleDataBreachCheck } from '@/app/actions';
 import type { DataBreachCheckOutput } from '@/ai/flows/check-data-breach-flow';
 import LoadingDots from './LoadingDots';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, ShieldCheck, ShieldHalf, Calendar, KeyRound, User, Mail, Phone, List } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, ShieldHalf, Calendar, KeyRound, User, Mail, Phone, List, ShieldQuestion } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -83,6 +83,50 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
       setView('form');
     }
   };
+
+  const renderResultCard = (result: DataBreachCheckOutput) => {
+    if (!result.emailExists) {
+        return (
+             <Card className="border-yellow-500/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ShieldQuestion className="h-6 w-6 text-yellow-500" /> Email Not in Database
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                </CardContent>
+            </Card>
+        )
+    }
+    if (result.isBreached) {
+        return (
+            <Card className="border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-6 w-6 text-destructive" /> Found in {result.breaches.length} Breach(es)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    return (
+        <Card className="border-green-500/50">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="h-6 w-6 text-green-500" /> No Breaches Found!
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -155,19 +199,7 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full pr-4">
                 <div className="space-y-4 py-2">
-                  <Card className={analysisResult.isBreached ? 'border-destructive/50' : 'border-green-500/50'}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        {analysisResult.isBreached
-                            ? <><AlertTriangle className="h-6 w-6 text-destructive" /> Found in {analysisResult.breaches.length} Breach(es)</>
-                            : <><ShieldCheck className="h-6 w-6 text-green-500" /> No Breaches Found!</>
-                        }
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{analysisResult.recommendation}</p>
-                    </CardContent>
-                  </Card>
+                  {renderResultCard(analysisResult)}
 
                   {analysisResult.breaches.map((breach, index) => (
                     <Card key={index}>
