@@ -2,7 +2,7 @@
 'use client';
 
 import type { FC } from 'react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { AnalyzeScreenshotDialog } from './AnalyzeScreenshotDialog';
+import AnalyzeScreenshotDialog from './AnalyzeScreenshotDialog';
 import { ScanSearch } from 'lucide-react';
 
 const chatFormSchema = z.object({
@@ -120,7 +120,7 @@ const ChatInterface: FC = () => {
     reset();
 
     const history = currentMessages
-      .filter(m => !m.isLoading && m.id !== 'initial-message')
+      .filter(m => !m.isLoading && m.id !== 'initial-message' && !m.screenshotAnalysis)
       .map(m => ({
         role: m.sender === 'user' ? 'user' : 'model',
         content: m.text,
