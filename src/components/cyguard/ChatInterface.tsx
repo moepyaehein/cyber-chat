@@ -2,7 +2,7 @@
 'use client';
 
 import type { FC } from 'react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Paperclip, X, Trash2 } from 'lucide-react';
+import { SendHorizontal, Paperclip, X, Trash2, PlusSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -53,7 +53,7 @@ type ChatFormValues = z.infer<typeof chatFormSchema>;
 const initialMessage: ClientMessage = {
   id: 'initial-message',
   sender: 'ai',
-  text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below.\n\nYour conversation is stored locally in your browser for your convenience. You can clear the history at any time using the trash icon.",
+  text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below.\n\nYour conversation can be saved to your browser locally. You can clear the saved history at any time.",
   isLoading: false,
 };
 
@@ -89,18 +89,14 @@ const ChatInterface: FC = () => {
     }
   }, []);
 
-  // Save history to localStorage on change
-  useEffect(() => {
+  const saveHistory = useCallback(() => {
     try {
-        // We only save if there's more than the initial message.
-        if (messages.length > 1 || (messages.length === 1 && messages[0].id !== 'initial-message')) {
-            // Filter out any loading messages before saving
-            const historyToSave = messages.filter(m => !m.isLoading);
-            localStorage.setItem('cyguard-chat-history', JSON.stringify(historyToSave));
-        } else {
-            // If only the initial message is left, clear storage
-            localStorage.removeItem('cyguard-chat-history');
-        }
+      if (messages.length > 1 || (messages.length === 1 && messages[0].id !== 'initial-message')) {
+        const historyToSave = messages.filter(m => !m.isLoading);
+        localStorage.setItem('cyguard-chat-history', JSON.stringify(historyToSave));
+        return true;
+      }
+      return false; // Nothing to save
     } catch (error) {
         console.error("Could not save chat history to localStorage", error);
         toast({
@@ -108,6 +104,7 @@ const ChatInterface: FC = () => {
             description: "Could not save chat history to your browser's local storage.",
             variant: "destructive"
         });
+        return false;
     }
   }, [messages, toast]);
 
@@ -149,11 +146,27 @@ const ChatInterface: FC = () => {
     setMessages([initialMessage]);
     localStorage.removeItem('cyguard-chat-history');
     toast({
-        title: "Chat History Cleared",
-        description: "Your conversation has been removed from your local device."
+        title: "Saved Chat Cleared",
+        description: "Your saved conversation has been removed from your local device."
     });
   };
+
+  const startNewChat = () => {
+    reset();
+    setMessages([initialMessage]);
+    setImagePreview(null);
+  };
   
+  const handleSaveAndStartNew = () => {
+    if (saveHistory()) {
+        toast({
+            title: "Chat History Saved",
+            description: "Your conversation has been saved to this browser."
+        });
+    }
+    startNewChat();
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -217,32 +230,62 @@ const ChatInterface: FC = () => {
     }
   };
 
+  const isChatPristine = messages.length <= 1 && messages[0]?.id === 'initial-message';
+
   return (
     <div className="flex flex-col h-full bg-transparent">
-        <div className="flex-shrink-0 flex items-center justify-between p-2 border-b">
+        <div className="flex-shrink-0 flex items-center justify-between p-2 border-b gap-2">
             <h2 className="text-lg font-semibold">CyGuard Chat</h2>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={messages.length <= 1 && messages[0]?.id === 'initial-message'}>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Clear History
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete your chat history from this browser. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearHistory}>
-                    Yes, delete history
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex items-center gap-2">
+                 <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={isChatPristine}>
+                        <PlusSquare className="mr-2 h-4 w-4" />
+                        New Chat
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Start a New Chat?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Would you like to save your current conversation to this browser's local storage before starting a new chat?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={startNewChat} className="bg-destructive hover:bg-destructive/90">
+                        Start New Without Saving
+                      </AlertDialogAction>
+                      <AlertDialogAction onClick={handleSaveAndStartNew}>
+                        Save and Start New
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Clear Saved
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete your last saved chat history from this browser. This action cannot be undone. Your current, unsaved chat will not be affected.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleClearHistory}>
+                        Yes, delete saved history
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
       <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}>
         <div className="space-y-1 pb-4 pt-4">
