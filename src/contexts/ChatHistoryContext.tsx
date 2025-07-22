@@ -43,6 +43,26 @@ const createNewChat = (title = "New Chat"): ChatSession => ({
   messages: [initialMessage],
 });
 
+// Helper function to remove undefined values, which are not supported by Firestore
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item));
+  }
+
+  const newObj: {[key: string]: any} = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] !== undefined) {
+      newObj[key] = sanitizeForFirestore(obj[key]);
+    }
+  }
+  return newObj;
+};
+
+
 export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [savedChats, setSavedChats] = useState<ChatSession[]>([]);
@@ -89,7 +109,7 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isInitialLoad, activeChat.id]);
 
   const loadChat = (chatId: string) => {
     const chatToLoad = savedChats.find(c => c.id === chatId);
@@ -114,12 +134,11 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
       timestamp: Date.now(), // Update timestamp on save
     };
     
-    // Check if it's a new chat not yet in savedChats
-    const isNewChat = !savedChats.some(c => c.id === chatToSave.id);
+    const sanitizedChat = sanitizeForFirestore(chatToSave);
 
     try {
-      const chatDocRef = doc(firestore, `users/${user.uid}/chats`, chatToSave.id);
-      await setDoc(chatDocRef, chatToSave);
+      const chatDocRef = doc(firestore, `users/${user.uid}/chats`, sanitizedChat.id);
+      await setDoc(chatDocRef, sanitizedChat);
       
       // If it was a new chat, it will now be part of the snapshot listener's update.
       // We can also optimistically update the state if needed, but the listener handles it.
