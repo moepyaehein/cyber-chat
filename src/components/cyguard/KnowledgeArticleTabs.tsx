@@ -31,7 +31,7 @@ const ArticleList: FC<ArticleListProps> = ({ articles }) => (
       <Dialog key={article.slug}>
         <DialogTrigger asChild>
           <Card className="flex flex-col h-full overflow-hidden group hover:border-primary/80 transition-all cursor-pointer shadow-md hover:shadow-primary/20 hover:shadow-lg">
-            <div className="relative aspect-video overflow-hidden">
+            <div className="relative aspect-video overflow-hidden" style={{ display: 'block', width: '100%', height: 'auto' }}>
                 <Image 
                     src={article.image.url} 
                     alt={article.title}

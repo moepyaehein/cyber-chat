@@ -12,9 +12,21 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem, { type Message as ChatMessageType } from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Paperclip, X } from 'lucide-react';
+import { SendHorizontal, Paperclip, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -37,15 +49,15 @@ const chatFormSchema = z.object({
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
 
+const initialMessage: ChatMessageType = {
+  id: 'initial-message',
+  sender: 'ai',
+  text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below.\n\nYour conversation is stored locally in your browser for your convenience. You can clear the history at any time using the trash icon.",
+  isLoading: false,
+};
+
 const ChatInterface: FC = () => {
-  const [messages, setMessages] = useState<ChatMessageType[]>([
-    {
-      id: uuidv4(),
-      sender: 'ai',
-      text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below. I'll analyze it for threats.\n\n**For your privacy, please avoid including personal information.**",
-      isLoading: false,
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([initialMessage]);
   const { toast } = useToast();
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +69,46 @@ const ChatInterface: FC = () => {
 
   const imageFile = watch('image');
   const { ref: imageInputRef, ...restImageInput } = register('image');
+
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('cyguard-chat-history');
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+        if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+          setMessages(parsedHistory);
+        }
+      }
+    } catch (error) {
+        console.error("Could not load chat history from localStorage", error);
+        // If parsing fails, start with a fresh chat
+        setMessages([initialMessage]);
+    }
+  }, []);
+
+  // Save history to localStorage on change
+  useEffect(() => {
+    try {
+        // We only save if there's more than the initial message.
+        if (messages.length > 1) {
+            // Filter out any loading messages before saving
+            const historyToSave = messages.filter(m => !m.isLoading);
+            localStorage.setItem('cyguard-chat-history', JSON.stringify(historyToSave));
+        } else {
+            // If only the initial message is left, clear storage
+            localStorage.removeItem('cyguard-chat-history');
+        }
+    } catch (error) {
+        console.error("Could not save chat history to localStorage", error);
+        toast({
+            title: "Storage Error",
+            description: "Could not save chat history to your browser's local storage.",
+            variant: "destructive"
+        });
+    }
+  }, [messages, toast]);
 
 
   useEffect(() => {
@@ -91,6 +143,15 @@ const ChatInterface: FC = () => {
         toast({ title: "Image Error", description: errors.image.message as string, variant: "destructive" });
     }
   }, [errors.message, errors.image, toast]);
+
+  const handleClearHistory = () => {
+    setMessages([initialMessage]);
+    localStorage.removeItem('cyguard-chat-history');
+    toast({
+        title: "Chat History Cleared",
+        description: "Your conversation has been removed from your local device."
+    });
+  };
   
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -157,8 +218,33 @@ const ChatInterface: FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-transparent">
+        <div className="flex-shrink-0 flex items-center justify-between p-2 border-b">
+            <h2 className="text-lg font-semibold">CyGuard Chat</h2>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={messages.length <= 1}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear History
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your chat history from this browser. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearHistory}>
+                    Yes, delete history
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+        </div>
       <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}>
-        <div className="space-y-1 pb-4">
+        <div className="space-y-1 pb-4 pt-4">
           {messages.map((msg) => (
             <ChatMessageItem key={msg.id} message={msg} />
           ))}
@@ -221,3 +307,5 @@ const ChatInterface: FC = () => {
 
 export default ChatInterface;
 
+
+    
