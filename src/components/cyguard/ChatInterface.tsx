@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Paperclip, X, Trash2, PlusSquare } from 'lucide-react';
+import { SendHorizontal, Paperclip, X, PlusSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -27,6 +27,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { ClientMessage } from '@/app/actions';
+import { useChatHistory } from '@/contexts/ChatHistoryContext';
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Label } from '../ui/label';
 
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
@@ -50,19 +53,21 @@ const chatFormSchema = z.object({
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
 
-const initialMessage: ClientMessage = {
-  id: 'initial-message',
-  sender: 'ai',
-  text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below.\n\nYour conversation can be saved to your browser locally. You can clear the saved history at any time.",
-  isLoading: false,
-};
 
 const ChatInterface: FC = () => {
-  const [messages, setMessages] = useState<ClientMessage[]>([initialMessage]);
   const { toast } = useToast();
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [chatTitle, setChatTitle] = useState('');
+
+  const {
+    activeChat,
+    setActiveChat,
+    startNewChat,
+    saveCurrentChat,
+  } = useChatHistory();
 
   const { register, handleSubmit, reset, formState: { isSubmitting, errors }, watch, setValue } = useForm<ChatFormValues>({
     resolver: zodResolver(chatFormSchema),
@@ -70,44 +75,6 @@ const ChatInterface: FC = () => {
 
   const imageFile = watch('image');
   const { ref: imageInputRef, ...restImageInput } = register('image');
-
-
-  // Load history from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedHistory = localStorage.getItem('cyguard-chat-history');
-      if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
-        if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
-          setMessages(parsedHistory);
-        }
-      }
-    } catch (error) {
-        console.error("Could not load chat history from localStorage", error);
-        // If parsing fails, start with a fresh chat
-        setMessages([initialMessage]);
-    }
-  }, []);
-
-  const saveHistory = useCallback(() => {
-    try {
-      if (messages.length > 1 || (messages.length === 1 && messages[0].id !== 'initial-message')) {
-        const historyToSave = messages.filter(m => !m.isLoading);
-        localStorage.setItem('cyguard-chat-history', JSON.stringify(historyToSave));
-        return true;
-      }
-      return false; // Nothing to save
-    } catch (error) {
-        console.error("Could not save chat history to localStorage", error);
-        toast({
-            title: "Storage Error",
-            description: "Could not save chat history to your browser's local storage.",
-            variant: "destructive"
-        });
-        return false;
-    }
-  }, [messages, toast]);
-
 
   useEffect(() => {
     if (imageFile && imageFile.length > 0) {
@@ -131,7 +98,7 @@ const ChatInterface: FC = () => {
          scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
       }
     }
-  }, [messages]);
+  }, [activeChat.messages]);
   
   useEffect(() => {
     if (errors.message) {
@@ -142,30 +109,24 @@ const ChatInterface: FC = () => {
     }
   }, [errors.message, errors.image, toast]);
 
-  const handleClearHistory = () => {
-    setMessages([initialMessage]);
-    localStorage.removeItem('cyguard-chat-history');
-    toast({
-        title: "Saved Chat Cleared",
-        description: "Your saved conversation has been removed from your local device."
-    });
-  };
 
-  const startNewChat = () => {
+  const handleStartNewChat = () => {
     reset();
-    setMessages([initialMessage]);
     setImagePreview(null);
-  };
-  
-  const handleSaveAndStartNew = () => {
-    if (saveHistory()) {
-        toast({
-            title: "Chat History Saved",
-            description: "Your conversation has been saved to this browser."
-        });
-    }
     startNewChat();
   };
+  
+  const handleSaveChat = () => {
+    const defaultTitle = activeChat.messages.find(m => m.sender === 'user')?.text.substring(0, 30) || `Chat - ${new Date().toLocaleString()}`;
+    const finalTitle = chatTitle.trim() || defaultTitle;
+    saveCurrentChat(finalTitle);
+    setChatTitle('');
+    setSaveDialogOpen(false);
+    toast({
+      title: "Chat Saved",
+      description: `Your conversation "${finalTitle}" has been saved.`
+    });
+  }
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -200,8 +161,8 @@ const ChatInterface: FC = () => {
       isLoading: true,
     };
     
-    const currentMessages = [...messages, userMessage];
-    setMessages(currentMessages.concat(aiThinkingMessage));
+    const currentMessages = [...activeChat.messages, userMessage];
+    setActiveChat({ ...activeChat, messages: currentMessages.concat(aiThinkingMessage) });
     reset();
     if (fileInputRef.current) fileInputRef.current.value = ""; // Clear file input
     setImagePreview(null);
@@ -222,22 +183,23 @@ const ChatInterface: FC = () => {
         description: result.error,
         variant: 'destructive',
       });
-      setMessages(prev => prev.filter(msg => msg.id !== aiThinkingMessageId)); 
+      setActiveChat(prev => ({ ...prev, messages: prev.messages.filter(msg => msg.id !== aiThinkingMessageId) })); 
     } else {
-      setMessages(prevMessages => 
-        prevMessages.map(msg => msg.id === aiThinkingMessageId ? { ...result, id: aiThinkingMessageId } : msg)
-      );
+      setActiveChat(prev => ({
+        ...prev,
+        messages: prev.messages.map(msg => msg.id === aiThinkingMessageId ? { ...result, id: aiThinkingMessageId } : msg),
+      }));
     }
   };
 
-  const isChatPristine = messages.length <= 1 && messages[0]?.id === 'initial-message';
+  const isChatPristine = activeChat.messages.length <= 1 && activeChat.messages[0]?.id === 'initial-message';
 
   return (
     <div className="flex flex-col h-full bg-transparent">
         <div className="flex-shrink-0 flex items-center justify-between p-2 border-b gap-2">
-            <h2 className="text-lg font-semibold">CyGuard Chat</h2>
+            <h2 className="text-lg font-semibold">{activeChat.title}</h2>
             <div className="flex items-center gap-2">
-                 <AlertDialog>
+                <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" disabled={isChatPristine}>
                         <PlusSquare className="mr-2 h-4 w-4" />
@@ -248,48 +210,51 @@ const ChatInterface: FC = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Start a New Chat?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Would you like to save your current conversation to this browser's local storage before starting a new chat?
+                        Any unsaved changes in the current chat will be lost. Would you like to save this conversation before starting a new one?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={startNewChat} className="bg-destructive hover:bg-destructive/90">
-                        Start New Without Saving
-                      </AlertDialogAction>
-                      <AlertDialogAction onClick={handleSaveAndStartNew}>
-                        Save and Start New
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Clear Saved
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete your last saved chat history from this browser. This action cannot be undone. Your current, unsaved chat will not be affected.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleClearHistory}>
-                        Yes, delete saved history
+                       <DialogTrigger asChild>
+                         <Button variant="secondary">Save First</Button>
+                       </DialogTrigger>
+                      <AlertDialogAction onClick={handleStartNewChat}>
+                        Start New
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                
+                <Dialog open={isSaveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                   <DialogTrigger asChild>
+                     <Button size="sm" disabled={isChatPristine}>Save Chat</Button>
+                   </DialogTrigger>
+                   <DialogContent>
+                     <DialogHeader>
+                       <DialogTitle>Save Chat</DialogTitle>
+                     </DialogHeader>
+                     <div className="grid gap-4 py-4">
+                        <Label htmlFor="chat-title">Chat Title</Label>
+                        <Input 
+                          id="chat-title"
+                          value={chatTitle}
+                          onChange={(e) => setChatTitle(e.target.value)}
+                          placeholder="Enter a title for this conversation..."
+                        />
+                     </div>
+                     <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button onClick={handleSaveChat}>Save</Button>
+                     </DialogFooter>
+                   </DialogContent>
+                </Dialog>
             </div>
         </div>
       <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}>
         <div className="space-y-1 pb-4 pt-4">
-          {messages.map((msg) => (
+          {activeChat.messages.map((msg) => (
             <ChatMessageItem key={msg.id} message={msg} />
           ))}
         </div>

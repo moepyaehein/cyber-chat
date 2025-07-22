@@ -8,7 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import PageHeader from "./PageHeader";
 import Sidebar from "./Sidebar";
-import { Skeleton } from "@/components/ui/skeleton"; // For loading state
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChatHistoryProvider } from "@/contexts/ChatHistoryContext";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -44,17 +45,19 @@ const AppLayout: FC<AppLayoutProps> = ({ children }) => {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen bg-background text-foreground">
-        <Sidebar />
-        <SidebarInset className="flex flex-col flex-1 overflow-hidden">
-          <PageHeader />
-          <main className="flex-grow overflow-y-auto overflow-x-hidden">
-            {children}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <ChatHistoryProvider>
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex h-screen bg-background text-foreground">
+          <Sidebar />
+          <SidebarInset className="flex flex-col flex-1 overflow-hidden">
+            <PageHeader />
+            <main className="flex-grow overflow-y-auto overflow-x-hidden">
+              {children}
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </ChatHistoryProvider>
   );
 };
 
