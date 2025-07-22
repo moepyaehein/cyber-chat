@@ -1,158 +1,105 @@
+
 'use server';
+/**
+ * @fileOverview A Genkit flow to check if an email has been part of a data breach.
+ * THIS IS A MOCK IMPLEMENTATION FOR PROTOTYPING.
+ *
+ * - checkDataBreach - A function that checks a given email against a mock database.
+ * - CheckDataBreachInput - The input type for the checkDataBreach function.
+ * - CheckDataBreachOutput - The return type for the checkDataBreach function.
+ */
 
-import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat';
-import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
-import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
-import { analyzeWifiNetworks } from '@/ai/flows/analyze-wifi-flow';
-import { analyzeScreenshot } from '@/ai/flows/analyze-screenshot-flow';
-import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput } from '@/ai/schemas/wifi-analysis-schemas';
-import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
-import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
-import { z } from 'zod';
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
 
-const chatInputSchema = z.object({
-  message: z.string().max(2000, "Message too long."),
+// Define the schema for a single breach detail
+const BreachDetailSchema = z.object({
+  name: z.string().describe("The name of the breached service or website."),
+  date: z.string().describe("The date the breach occurred (YYYY-MM-DD)."),
+  description: z.string().describe("A summary of the breach and the data that was exposed."),
+  dataClasses: z.array(z.string()).describe("A list of data types that were compromised (e.g., 'Email addresses', 'Passwords', 'Usernames')."),
 });
+export type BreachDetail = z.infer<typeof BreachDetailSchema>;
 
-const chatHistorySchema = z.array(z.object({
-  role: z.enum(['user', 'model']),
-  content: z.string(),
-}));
-
-export interface ClientMessage {
-  id: string;
-  sender: 'user' | 'ai' | 'system';
-  text: string;
-  image?: string;
-  threatAssessment?: AssessThreatOutput;
-  screenshotAnalysis?: AnalyzeScreenshotOutput;
-  isLoading?: boolean;
-}
-
-export async function handleUserMessage(
-  messageId: string,
-  userInput: string,
-  history: { role: 'user' | 'model'; content: string }[],
-): Promise<ClientMessage | { error: string }> {
-  
-  const parsedInput = chatInputSchema.safeParse({ message: userInput });
-  if (!parsedInput.success) {
-    return { error: parsedInput.error.errors.map(e => e.message).join(', ') };
-  }
-
-  const parsedHistory = chatHistorySchema.safeParse(history);
-  if (!parsedHistory.success) {
-     return { error: "Invalid chat history format." };
-  }
-
-  try {
-    const aiResponse = await assessThreat({
-        user_input: parsedInput.data.message,
-        history: parsedHistory.data,
-    });
-    
-    return {
-        id: messageId,
-        sender: 'ai',
-        text: aiResponse.response,
-        threatAssessment: aiResponse,
-        isLoading: false,
-    };
-  } catch (error) {
-    console.error("Error handling user message:", error);
-    return { error: "Sorry, I encountered an issue processing your request. Please try again." };
-  }
-}
-
-const phishingReportSchema = z.object({
-  content: z.string().min(10, "Report content is too short.").max(5000, "Report content is too long."),
+// Define the input schema for the flow
+export const CheckDataBreachInputSchema = z.object({
+  email: z.string().email().describe('The email address to check for breaches.'),
 });
+export type CheckDataBreachInput = z.infer<typeof CheckDataBreachInputSchema>;
 
-export async function handlePhishingReport(
-  reportContent: string
-): Promise<{ success: true; assessment: AssessThreatOutput } | { success: false; error: string }> {
-  const parsedReport = phishingReportSchema.safeParse({ content: reportContent });
-
-  if (!parsedReport.success) {
-    return { success: false, error: parsedReport.error.errors.map(e => e.message).join(', ') };
-  }
-
-  try {
-    // Phishing report is a one-shot analysis, so no history is passed.
-    const aiResponse = await assessThreat({ user_input: parsedReport.data.content, history: [] });
-    return { success: true, assessment: aiResponse };
-  } catch (error) {
-    console.error("Error calling assessThreat flow for phishing report:", error);
-    return { success: false, error: "Sorry, I encountered an issue analyzing the report. Please try again." };
-  }
-}
-
-const securityLogSchema = z.object({
-  logContent: z.string().min(10, "Log content is too short.").max(10000, "Log content is too long. Please provide a smaller snippet or break it into parts."),
+// Define the output schema for the flow
+export const CheckDataBreachOutputSchema = z.object({
+  found: z.boolean().describe("Whether the email was found in the database."),
+  breaches: z.array(BreachDetailSchema).describe('A list of breach details associated with the email. Empty if no breaches were found.'),
+  message: z.string().describe("A summary message for the user."),
 });
+export type CheckDataBreachOutput = z.infer<typeof CheckDataBreachOutputSchema>;
 
-export async function handleLogAnalysis(
-  logContent: string
-): Promise<{ success: true; analysis: AnalyzeSecurityLogOutput } | { success: false; error: string }> {
-  const parsedLog = securityLogSchema.safeParse({ logContent });
-
-  if (!parsedLog.success) {
-    return { success: false, error: parsedLog.error.errors.map(e => e.message).join(', ') };
-  }
-
-  try {
-    const aiResponse = await analyzeSecurityLog({ logContent: parsedLog.data.logContent });
-    return { success: true, analysis: aiResponse };
-  } catch (error) {
-    console.error("Error calling analyzeSecurityLog flow:", error);
-    return { success: false, error: "Sorry, I encountered an issue analyzing the logs. Please try again." };
-  }
+export async function checkDataBreach(input: CheckDataBreachInput): Promise<CheckDataBreachOutput> {
+  return checkDataBreachFlow(input);
 }
 
 
-export async function handleFetchThreatIntel(): Promise<{ success: true; data: FetchThreatIntelOutput } | { success: false; error: string }> {
-  try {
-    const intelData = await fetchThreatIntel({}); // Empty input for now
-    return { success: true, data: intelData };
-  } catch (error) {
-    console.error("Error calling fetchThreatIntel flow:", error);
-    return { success: false, error: "Sorry, I encountered an issue fetching threat intelligence. Please try again." };
+// Mock database of breached emails
+const mockBreachDatabase: { [email: string]: BreachDetail[] } = {
+  "test@example.com": [
+    {
+      name: "SocialConnect Platform",
+      date: "2023-01-15",
+      description: "A large-scale data breach exposed user profiles, including usernames, email addresses, and hashed passwords.",
+      dataClasses: ["Email addresses", "Usernames", "Passwords"],
+    },
+    {
+      name: "E-Shop Central",
+      date: "2022-07-20",
+      description: "Customer database was compromised, exposing names, email addresses, and purchase histories.",
+      dataClasses: ["Email addresses", "Names", "Purchase history"],
+    },
+  ],
+  "user@example.com": [
+      {
+          name: "Online Gaming Forum",
+          date: "2021-11-01",
+          description: "A forum database was breached, leaking usernames and email addresses.",
+          dataClasses: ["Usernames", "Email addresses"],
+      }
+  ],
+  "safe@example.com": [], // An email that is in the system but has no breaches
+};
+
+
+const checkDataBreachFlow = ai.defineFlow(
+  {
+    name: 'checkDataBreachFlow',
+    inputSchema: CheckDataBreachInputSchema,
+    outputSchema: CheckDataBreachOutputSchema,
+  },
+  async ({ email }) => {
+    // In a real scenario, this would call an external API like Have I Been Pwned.
+    // For this mock, we check against our hardcoded object.
+
+    if (mockBreachDatabase.hasOwnProperty(email)) {
+      const breaches = mockBreachDatabase[email];
+      if (breaches.length > 0) {
+        return {
+          found: true,
+          breaches: breaches,
+          message: `This email was found in ${breaches.length} known data breach(es). It is recommended to change your password for the affected services.`
+        };
+      } else {
+        return {
+          found: true,
+          breaches: [],
+          message: "Good news! This email was checked and no breaches were found."
+        };
+      }
+    } else {
+      // Email does not exist in our mock database
+      return {
+        found: false,
+        breaches: [],
+        message: "This email address was not found in our records. This does not guarantee it has never been breached, but it is not present in our current dataset."
+      };
+    }
   }
-}
-
-export async function handleWifiAnalysis(
-  networks: WifiNetworkInput[]
-): Promise<{ success: true; analysis: AnalyzeWifiOutput } | { success: false; error: string }> {
-  const parsedInput = AnalyzeWifiInputSchema.safeParse({ networks });
-
-  if (!parsedInput.success) {
-    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
-  }
-
-  try {
-    const aiResponse = await analyzeWifiNetworks(parsedInput.data);
-    return { success: true, analysis: aiResponse };
-  } catch (error) {
-    console.error("Error calling analyzeWifiNetworks flow:", error);
-    return { success: false, error: "Sorry, I encountered an issue analyzing the Wi-Fi networks. Please try again." };
-  }
-}
-
-export async function handleScreenshotAnalysis(
-  prompt: string,
-  screenshotDataUri: string
-): Promise<{ success: true; analysis: AnalyzeScreenshotOutput } | { success: false; error: string }> {
-  const parsedInput = AnalyzeScreenshotInputSchema.safeParse({ prompt, screenshotDataUri });
-
-  if (!parsedInput.success) {
-    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
-  }
-
-  try {
-    const aiResponse = await analyzeScreenshot(parsedInput.data);
-    return { success: true, analysis: aiResponse };
-  } catch (error) {
-    console.error("Error calling analyzeScreenshot flow:", error);
-    return { success: false, error: "Sorry, I encountered an issue analyzing the screenshot. Please try again." };
-  }
-}
+);

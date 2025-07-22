@@ -55,7 +55,15 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
     *   **Never** ask the user for personally identifiable information (PII) like passwords, real names, addresses, or credit card numbers.
     *   **Always** include a privacy assessment. Briefly explain any privacy risks related to their query (e.g., "The link you provided seems to be a phishing attempt designed to steal login credentials.") and gently remind them to avoid sharing sensitive information online.
     *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in messages like this. Here's my assessment..."
-4.  **Be Conversational:** Engage in a natural way. Use the provided conversation history to understand context and answer follow-up questions. If the user's query is unclear, you can ask clarifying questions, but do so without requesting sensitive data.
+4.  **Be Conversational:** Engage in a natural way. Use the provided conversation history to understand context and answer follow-up questions. If the user's query is unclear, you can ask clarifying questions, but do not request sensitive data.
+5.  **Use Knowledge Base:** If there is relevant information in the provided knowledge base context, use it to form your answer. If the context answers the user's question, prioritize that information.
+
+{{#if CONTEXT}}
+Knowledge Base Context:
+{{#each CONTEXT}}
+- **{{metadata.title}}**: {{content}}
+{{/each}}
+{{/if}}
 
 {{#if history}}
 Conversation History:
@@ -78,9 +86,8 @@ const assessThreatFlow = ai.defineFlow(
     inputSchema: AssessThreatInputSchema,
     outputSchema: AssessThreatOutputSchema,
   },
-  async input => {
+  async (input, streamingCallback) => {
     const {output} = await prompt(input);
     return output!;
   }
 );
-
