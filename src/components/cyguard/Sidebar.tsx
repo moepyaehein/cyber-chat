@@ -17,7 +17,7 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, MessageSquare, Trash2 } from "lucide-react";
+import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import ReportPhishingDialog from "./ReportPhishingDialog";
@@ -26,18 +26,8 @@ import ThreatIntelDialog from "./ThreatIntelDialog";
 import WifiHunterDialog from "./WifiHunterDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
-import { useChatHistory } from "@/contexts/ChatHistoryContext";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
+import { ScanSearch } from "lucide-react";
 
 interface SidebarProps {}
 
@@ -49,8 +39,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
   const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
-
-  const { savedChats, loadChat, deleteChat, activeChat, isLoading: isChatHistoryLoading } = useChatHistory();
+  const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -65,7 +54,10 @@ const Sidebar: FC<SidebarProps> = () => {
       setIsThreatIntelOpen(true);
     } else if (action === "Wi-Fi Hunter") {
       setIsWifiHunterOpen(true);
-    } else {
+    } else if (action === "Analyze Screenshot") {
+      setIsAnalyzeScreenshotOpen(true);
+    }
+     else {
       toast({
         title: "Action Triggered",
         description: `${action} action has been initiated.`,
@@ -76,15 +68,6 @@ const Sidebar: FC<SidebarProps> = () => {
   const handleLogout = async () => {
     await signOut();
     toast({ title: "Logged Out", description: "You have been successfully logged out."});
-  }
-
-  const handleDeleteChat = async (e: React.MouseEvent, chatId: string) => {
-    e.stopPropagation(); // prevent loading the chat
-    await deleteChat(chatId);
-    toast({
-      title: "Chat Deleted",
-      description: "The conversation has been removed.",
-    });
   }
 
   return (
@@ -130,6 +113,15 @@ const Sidebar: FC<SidebarProps> = () => {
                     <SidebarGroupLabel>Tools</SidebarGroupLabel>
                     <SidebarMenuItem>
                         <SidebarMenuButton
+                        onClick={() => handleQuickAction("Analyze Screenshot")}
+                        tooltip={{children: "Analyze Screenshot", side: "right", align:"center"}}
+                        >
+                        <ScanSearch />
+                        <span>Analyze Screenshot</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
                         onClick={() => handleQuickAction("Report Phishing")}
                         tooltip={{children: "Report Phishing", side: "right", align:"center"}}
                         >
@@ -165,57 +157,6 @@ const Sidebar: FC<SidebarProps> = () => {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarGroup>
-
-                <SidebarSeparator />
-
-                 <SidebarGroup>
-                    <SidebarGroupLabel>Saved Chats</SidebarGroupLabel>
-                    <div className="flex flex-col gap-1 overflow-y-auto max-h-48">
-                      {isChatHistoryLoading ? (
-                         <div className="p-2 space-y-2">
-                            <div className="h-6 bg-muted rounded animate-pulse group-data-[collapsible=icon]:hidden"></div>
-                             <div className="h-6 bg-muted rounded animate-pulse group-data-[collapsible=icon]:hidden"></div>
-                          </div>
-                      ) : savedChats.length > 0 ? (
-                        savedChats.map((chat) => (
-                          <SidebarMenuItem key={chat.id} className="relative group/chat-item">
-                            <SidebarMenuButton
-                              onClick={() => loadChat(chat.id)}
-                              isActive={chat.id === activeChat.id}
-                              tooltip={{children: chat.title, side: "right", align:"center"}}
-                              className="justify-start text-left"
-                            >
-                              <MessageSquare />
-                              <span className="truncate">{chat.title}</span>
-                            </SidebarMenuButton>
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <button className="absolute right-1 top-1/2 -translate-y-1/2 p-1 opacity-0 group-hover/chat-item:opacity-100 focus:opacity-100 transition-opacity group-data-[collapsible=icon]:hidden">
-                                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive"/>
-                                    </button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete "{chat.title}"?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    This will permanently delete this chat history from your account. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => handleDeleteChat(e, chat.id)}>
-                                    Yes, delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                          </SidebarMenuItem>
-                        ))
-                      ) : (
-                        <div className="text-xs text-center text-muted-foreground p-2 group-data-[collapsible=icon]:hidden">No saved chats.</div>
-                      )}
-                    </div>
-                 </SidebarGroup>
             </SidebarMenu>
           )}
           {!user && !loading && (
@@ -266,6 +207,10 @@ const Sidebar: FC<SidebarProps> = () => {
       <WifiHunterDialog
         isOpen={isWifiHunterOpen}
         onOpenChange={setIsWifiHunterOpen}
+      />
+      <AnalyzeScreenshotDialog
+        isOpen={isAnalyzeScreenshotOpen}
+        onOpenChange={setIsAnalyzeScreenshotOpen}
       />
     </>
   );

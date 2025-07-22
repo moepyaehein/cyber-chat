@@ -11,13 +11,9 @@ import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-s
 import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
 import { z } from 'zod';
 
-const userInputSchema = z.object({
-  message: z.string().max(2000, "Message too long.").optional(), // Message can be optional if an image is provided
-  screenshotDataUri: z.string().optional(),
-}).refine(data => data.message || data.screenshotDataUri, {
-    message: "You must provide either a message or a screenshot.",
+const chatInputSchema = z.object({
+  message: z.string().max(2000, "Message too long."),
 });
-
 
 const chatHistorySchema = z.array(z.object({
   role: z.enum(['user', 'model']),
@@ -26,7 +22,7 @@ const chatHistorySchema = z.array(z.object({
 
 export interface ClientMessage {
   id: string;
-  sender: 'user' | 'ai';
+  sender: 'user' | 'ai' | 'system';
   text: string;
   image?: string;
   threatAssessment?: AssessThreatOutput;
@@ -38,10 +34,9 @@ export async function handleUserMessage(
   messageId: string,
   userInput: string,
   history: { role: 'user' | 'model'; content: string }[],
-  screenshotDataUri?: string,
 ): Promise<ClientMessage | { error: string }> {
   
-  const parsedInput = userInputSchema.safeParse({ message: userInput, screenshotDataUri });
+  const parsedInput = chatInputSchema.safeParse({ message: userInput });
   if (!parsedInput.success) {
     return { error: parsedInput.error.errors.map(e => e.message).join(', ') };
   }
@@ -52,36 +47,18 @@ export async function handleUserMessage(
   }
 
   try {
-     // If a screenshot is provided, use the screenshot analysis flow
-    if (parsedInput.data.screenshotDataUri) {
-        const aiResponse = await analyzeScreenshot({
-            prompt: parsedInput.data.message || "Please analyze this screenshot for security threats.",
-            screenshotDataUri: parsedInput.data.screenshotDataUri,
-        });
-        
-        return {
-            id: messageId,
-            sender: 'ai',
-            text: aiResponse.recommendation, // Use the recommendation as the main text
-            screenshotAnalysis: aiResponse,
-            isLoading: false,
-        };
-
-    } else {
-        // Otherwise, use the standard text-based threat assessment
-        const aiResponse = await assessThreat({
-            user_input: parsedInput.data.message || "",
-            history: parsedHistory.data,
-        });
-        
-        return {
-            id: messageId,
-            sender: 'ai',
-            text: aiResponse.response,
-            threatAssessment: aiResponse,
-            isLoading: false,
-        };
-    }
+    const aiResponse = await assessThreat({
+        user_input: parsedInput.data.message,
+        history: parsedHistory.data,
+    });
+    
+    return {
+        id: messageId,
+        sender: 'ai',
+        text: aiResponse.response,
+        threatAssessment: aiResponse,
+        isLoading: false,
+    };
   } catch (error) {
     console.error("Error handling user message:", error);
     return { error: "Sorry, I encountered an issue processing your request. Please try again." };

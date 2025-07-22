@@ -6,15 +6,15 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Paperclip, X, PlusSquare, Save } from 'lucide-react';
+import { SendHorizontal, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import type { ClientMessage } from '@/app/actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,143 +25,85 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import type { ClientMessage } from '@/app/actions';
-import { useChatHistory } from '@/contexts/ChatHistoryContext';
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { Label } from '../ui/label';
-
-
-const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+} from "@/components/ui/alert-dialog";
+import { AnalyzeScreenshotDialog } from './AnalyzeScreenshotDialog';
+import { ScanSearch } from 'lucide-react';
 
 const chatFormSchema = z.object({
-  message: z.string().max(2000, 'Message is too long').optional(),
-  image: z
-    .custom<FileList>()
-    .optional()
-    .refine((files) => !files || files.length === 0 || files[0].size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
-    .refine(
-      (files) => !files || files.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files[0].type),
-      ".jpg, .jpeg, .png and .webp files are accepted."
-    ),
-}).refine(data => data.message || (data.image && data.image.length > 0), {
-    message: 'Message cannot be empty unless an image is attached.',
-    path: ['message'],
+  message: z.string().min(1, 'Message cannot be empty.').max(2000, 'Message is too long'),
 });
-
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
 
+const initialMessage: ClientMessage = {
+  id: 'initial-message',
+  sender: 'ai',
+  text: "Hello! I'm CyGuard. Paste a suspicious message or link below. Your chat is saved in this browser and you can clear it at any time.",
+  isLoading: false,
+};
+
+const CHAT_HISTORY_KEY = 'cyguard_chat_history';
 
 const ChatInterface: FC = () => {
   const { toast } = useToast();
+  const [messages, setMessages] = useState<ClientMessage[]>([initialMessage]);
+  const [isScreenshotDialogOpen, setScreenshotDialogOpen] = useState(false);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isSaveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [chatTitle, setChatTitle] = useState('');
 
-  const {
-    activeChat,
-    setActiveChat,
-    startNewChat,
-    saveCurrentChat,
-  } = useChatHistory();
-
-  const { register, handleSubmit, reset, formState: { isSubmitting, errors }, watch, setValue } = useForm<ChatFormValues>({
+  const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<ChatFormValues>({
     resolver: zodResolver(chatFormSchema),
   });
 
-  const imageFile = watch('image');
-  const { ref: imageInputRef, ...restImageInput } = register('image');
-
+  // Load chat history from local storage on initial render
   useEffect(() => {
-    if (imageFile && imageFile.length > 0) {
-      const file = imageFile[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
+    try {
+      const savedHistory = localStorage.getItem(CHAT_HISTORY_KEY);
+      if (savedHistory) {
+        setMessages(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error("Failed to load chat history from local storage:", error);
+      setMessages([initialMessage]);
     }
-  }, [imageFile]);
+  }, []);
 
+  // Save chat history to local storage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+    } catch (error) {
+      console.error("Failed to save chat history to local storage:", error);
+    }
+  }, [messages]);
+  
   useEffect(() => {
     if (scrollViewportRef.current) {
-      const viewport = scrollViewportRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-      } else {
-         scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
-      }
+        const viewport = scrollViewportRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+            viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+        } else {
+            scrollViewportRef.current.scrollTo({ top: scrollViewportRef.current.scrollHeight, behavior: 'smooth' });
+        }
     }
-  }, [activeChat.messages]);
+  }, [messages]);
   
   useEffect(() => {
     if (errors.message) {
       toast({ title: "Input Error", description: errors.message.message, variant: "destructive" });
     }
-    if(errors.image){
-        toast({ title: "Image Error", description: errors.image.message as string, variant: "destructive" });
-    }
-  }, [errors.message, errors.image, toast]);
+  }, [errors.message, toast]);
 
-  // Set chat title for save dialog when it opens
-  useEffect(() => {
-      if (isSaveDialogOpen) {
-          const defaultTitle = activeChat.messages.find(m => m.sender === 'user')?.text.substring(0, 40) || activeChat.title;
-          setChatTitle(activeChat.title === "New Chat" ? defaultTitle : activeChat.title);
-      }
-  }, [isSaveDialogOpen, activeChat]);
-
-
-  const handleStartNewChat = () => {
-    reset();
-    setImagePreview(null);
-    startNewChat();
-  };
-  
-  const handleSaveChat = async () => {
-    const finalTitle = chatTitle.trim() || "Untitled Chat";
-    await saveCurrentChat(finalTitle);
-    setChatTitle('');
-    setSaveDialogOpen(false);
-    toast({
-      title: "Chat Saved",
-      description: `Your conversation "${finalTitle}" has been saved.`
-    });
-  }
-  
-  const promptToSaveAndStartNew = async () => {
-      await handleSaveChat();
-      handleStartNewChat();
-  }
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
+  const handleClearHistory = () => {
+    setMessages([initialMessage]);
+    toast({ title: "Chat Cleared", description: "Your conversation has been cleared from this browser." });
   };
 
   const onSubmit: SubmitHandler<ChatFormValues> = async (data) => {
     const userMessageId = uuidv4();
-    let imageAsDataUrl: string | undefined = undefined;
-    
-    if (data.image && data.image.length > 0) {
-        imageAsDataUrl = await fileToBase64(data.image[0]);
-    }
-
     const userMessage: ClientMessage = {
       id: userMessageId,
       sender: 'user',
-      text: data.message ?? "",
-      image: imageAsDataUrl,
+      text: data.message,
       isLoading: false,
     };
 
@@ -173,21 +115,18 @@ const ChatInterface: FC = () => {
       isLoading: true,
     };
     
-    const currentMessages = [...activeChat.messages, userMessage];
-    setActiveChat({ ...activeChat, messages: currentMessages.concat(aiThinkingMessage) });
+    const currentMessages = [...messages, userMessage];
+    setMessages(currentMessages.concat(aiThinkingMessage));
     reset();
-    if (fileInputRef.current) fileInputRef.current.value = ""; // Clear file input
-    setImagePreview(null);
-
 
     const history = currentMessages
-      .filter(m => !m.isLoading && !m.screenshotAnalysis && m.id !== 'initial-message')
+      .filter(m => !m.isLoading && m.id !== 'initial-message')
       .map(m => ({
         role: m.sender === 'user' ? 'user' : 'model',
         content: m.text,
       }));
 
-    const result = await handleUserMessage(aiThinkingMessageId, data.message ?? "", history, imageAsDataUrl);
+    const result = await handleUserMessage(aiThinkingMessageId, data.message, history);
 
     if ('error' in result) {
       toast({
@@ -195,144 +134,71 @@ const ChatInterface: FC = () => {
         description: result.error,
         variant: 'destructive',
       });
-      setActiveChat(prev => ({ ...prev, messages: prev.messages.filter(msg => msg.id !== aiThinkingMessageId) })); 
+      setMessages(prev => prev.filter(msg => msg.id !== aiThinkingMessageId)); 
     } else {
-      setActiveChat(prev => ({
-        ...prev,
-        messages: prev.messages.map(msg => msg.id === aiThinkingMessageId ? { ...result, id: aiThinkingMessageId } : msg),
-      }));
+      setMessages(prev => prev.map(msg => msg.id === aiThinkingMessageId ? { ...result, id: aiThinkingMessageId } : msg));
     }
   };
 
-  const isChatPristine = activeChat.messages.length <= 1 && activeChat.messages[0]?.id === 'initial-message';
-
   return (
+    <>
     <div className="flex flex-col h-full bg-transparent">
-        <div className="flex-shrink-0 flex items-center justify-between p-2 border-b gap-2">
-            <h2 className="text-lg font-semibold truncate pr-4">{activeChat.title}</h2>
-            <div className="flex items-center gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={isChatPristine}>
-                        <PlusSquare className="mr-2 h-4 w-4" />
-                        New Chat
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Start a New Chat?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Any unsaved changes in the current chat will be lost. Would you like to save this conversation before starting a new one?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                       <AlertDialogAction onClick={() => {
-                           setSaveDialogOpen(true);
-                       }}>
-                         Save First
-                       </AlertDialogAction>
-                      <AlertDialogAction onClick={handleStartNewChat}>
-                        Start New (Don't Save)
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                
-                <Dialog open={isSaveDialogOpen} onOpenChange={setSaveDialogOpen}>
-                   <DialogTrigger asChild>
-                     <Button size="sm" disabled={isChatPristine}>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save
-                     </Button>
-                   </DialogTrigger>
-                   <DialogContent>
-                     <DialogHeader>
-                       <DialogTitle>Save Chat</DialogTitle>
-                     </DialogHeader>
-                     <div className="grid gap-4 py-4">
-                        <Label htmlFor="chat-title">Chat Title</Label>
-                        <Input 
-                          id="chat-title"
-                          value={chatTitle}
-                          onChange={(e) => setChatTitle(e.target.value)}
-                          placeholder="Enter a title for this conversation..."
-                        />
-                     </div>
-                     <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={handleSaveChat}>Save</Button>
-                     </DialogFooter>
-                   </DialogContent>
-                </Dialog>
+        <div className="flex-shrink-0 flex items-center justify-between p-3 border-b gap-2">
+            <h2 className="text-lg font-semibold truncate pr-4">CyGuard Chat</h2>
+            <div className='flex items-center gap-2'>
+              <Button variant="outline" size="sm" onClick={() => setScreenshotDialogOpen(true)}>
+                <ScanSearch className="h-4 w-4 mr-2"/>
+                Analyze Screenshot
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={messages.length <= 1}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Clear History
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your current chat history from this browser. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearHistory}>
+                      Yes, clear history
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
         </div>
       <ScrollArea className="flex-grow px-1 md:px-2" ref={scrollViewportRef}>
         <div className="space-y-1 pb-4 pt-4">
-          {activeChat.messages.map((msg) => (
+          {messages.map((msg) => (
             <ChatMessageItem key={msg.id} message={msg} />
           ))}
         </div>
       </ScrollArea>
       <div className="border-t border-border p-3 md:p-4 bg-card/50 backdrop-blur-sm shadow- ऊपर">
-        {imagePreview && (
-          <div className="relative w-fit mb-2 p-2 border rounded-md bg-muted">
-            <Image src={imagePreview} alt="Image preview" width={80} height={80} className="rounded-md object-cover" />
-            <Button
-              size="icon"
-              variant="ghost"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80"
-              onClick={() => {
-                setValue('image', undefined);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
         <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2 md:gap-3">
           <Input
             {...register('message')}
-            placeholder="Paste text or attach a screenshot..."
+            placeholder="Paste text or a suspicious link..."
             className="flex-grow text-sm bg-background/70 focus:bg-background"
             autoComplete="off"
             disabled={isSubmitting}
           />
-          <input
-            type="file"
-            {...restImageInput}
-            ref={(e) => {
-              imageInputRef(e);
-              if(e) {
-                fileInputRef.current = e;
-              }
-            }}
-            className="hidden"
-            accept={ACCEPTED_IMAGE_TYPES.join(',')}
-            disabled={isSubmitting}
-          />
-          <Button 
-            type="button" 
-            size="icon" 
-            variant="outline"
-            disabled={isSubmitting} 
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="Attach screenshot"
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
           <Button type="submit" size="icon" disabled={isSubmitting} aria-label="Send message" className="shrink-0">
             <SendHorizontal className="h-5 w-5" />
           </Button>
         </form>
       </div>
     </div>
+    <AnalyzeScreenshotDialog isOpen={isScreenshotDialogOpen} onOpenChange={setScreenshotDialogOpen} />
+    </>
   );
 };
 
 export default ChatInterface;
-
-    
