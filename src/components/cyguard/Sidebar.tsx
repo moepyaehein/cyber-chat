@@ -14,12 +14,13 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home } from "lucide-react";
+import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import ReportPhishingDialog from "./ReportPhishingDialog";
 import ScanLogsDialog from "./ScanLogsDialog";
 import ThreatIntelDialog from "./ThreatIntelDialog";
+import WifiHunterDialog from "./WifiHunterDialog"; // Import the new dialog
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 
@@ -32,6 +33,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isReportPhishingOpen, setIsReportPhishingOpen] = useState(false);
   const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
+  const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false); // State for the new dialog
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -44,6 +46,8 @@ const Sidebar: FC<SidebarProps> = () => {
       setIsScanLogsOpen(true);
     } else if (action === "Threat Intel") {
       setIsThreatIntelOpen(true);
+    } else if (action === "Wi-Fi Hunter") {
+      setIsWifiHunterOpen(true);
     } else {
       toast({
         title: "Action Triggered",
@@ -100,6 +104,15 @@ const Sidebar: FC<SidebarProps> = () => {
                     >
                     <FileWarning />
                     <span>Report Phishing</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton
+                    onClick={() => handleQuickAction("Wi-Fi Hunter")}
+                    tooltip={{children: "Wi-Fi Hunter", side: "right", align:"center"}}
+                    >
+                    <Wifi />
+                    <span>Wi-Fi Hunter</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -166,6 +179,10 @@ const Sidebar: FC<SidebarProps> = () => {
       <ThreatIntelDialog
         isOpen={isThreatIntelOpen}
         onOpenChange={setIsThreatIntelOpen}
+      />
+      <WifiHunterDialog
+        isOpen={isWifiHunterOpen}
+        onOpenChange={setIsWifiHunterOpen}
       />
     </>
   );

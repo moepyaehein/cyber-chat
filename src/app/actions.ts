@@ -4,6 +4,8 @@
 import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat';
 import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
 import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
+import { analyzeWifiNetworks } from '@/ai/flows/analyze-wifi-flow';
+import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput } from '@/ai/schemas/wifi-analysis-schemas';
 import { z } from 'zod';
 
 const userInputSchema = z.object({
@@ -40,7 +42,7 @@ export async function handleUserMessage(
   }
 
   try {
-    const aiResponse = await assessThreat({ 
+    const aiResponse = await assessThreat({
       user_input: parsedInput.data.message,
       history: parsedHistory.data,
     });
@@ -73,7 +75,7 @@ export async function handlePhishingReport(
 
   try {
     // Phishing report is a one-shot analysis, so no history is passed.
-    const aiResponse = await assessThreat({ user_input: parsedReport.data.content });
+    const aiResponse = await assessThreat({ user_input: parsedReport.data.content, history: [] });
     return { success: true, assessment: aiResponse };
   } catch (error) {
     console.error("Error calling assessThreat flow for phishing report:", error);
@@ -111,5 +113,23 @@ export async function handleFetchThreatIntel(): Promise<{ success: true; data: F
   } catch (error) {
     console.error("Error calling fetchThreatIntel flow:", error);
     return { success: false, error: "Sorry, I encountered an issue fetching threat intelligence. Please try again." };
+  }
+}
+
+export async function handleWifiAnalysis(
+  networks: WifiNetworkInput[]
+): Promise<{ success: true; analysis: AnalyzeWifiOutput } | { success: false; error: string }> {
+  const parsedInput = AnalyzeWifiInputSchema.safeParse({ networks });
+
+  if (!parsedInput.success) {
+    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeWifiNetworks(parsedInput.data);
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeWifiNetworks flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the Wi-Fi networks. Please try again." };
   }
 }
