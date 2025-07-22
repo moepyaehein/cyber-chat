@@ -1,118 +1,158 @@
-
 'use server';
-/**
- * @fileOverview A Genkit flow to check if an email has been involved in a known data breach using the 'Have I Been Pwned?' API.
- *
- * - checkDataBreach - A function that checks a given email against the HIBP breach database.
- * - DataBreachCheckInput - The input type for the checkDataBreach function.
- * - DataBreachCheckOutput - The return type for the checkDataBreach function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { assessThreat, type AssessThreatOutput } from '@/ai/flows/assess-threat';
+import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/analyze-security-log-flow';
+import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
+import { analyzeWifiNetworks } from '@/ai/flows/analyze-wifi-flow';
+import { analyzeScreenshot } from '@/ai/flows/analyze-screenshot-flow';
+import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput } from '@/ai/schemas/wifi-analysis-schemas';
+import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
+import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
+import { z } from 'zod';
 
-// Schemas
-const BreachDetailSchema = z.object({
-  name: z.string().describe("The name of the breached service or company. (From HIBP: Name)"),
-  date: z.string().describe("The date the breach occurred or was discovered. (From HIBP: BreachDate)"),
-  compromisedData: z.array(z.string()).describe("A list of data types that were compromised in the breach (e.g., 'Email addresses', 'Passwords', 'Usernames'). (From HIBP: DataClasses)"),
-  summary: z.string().describe("A brief summary of the breach event. (From HIBP: Description)"),
+const chatInputSchema = z.object({
+  message: z.string().max(2000, "Message too long."),
 });
-export type BreachDetail = z.infer<typeof BreachDetailSchema>;
 
-const DataBreachCheckInputSchema = z.object({
-  email: z.string().email().describe("The email address to check for breaches."),
-});
-export type DataBreachCheckInput = z.infer<typeof DataBreachCheckInputSchema>;
+const chatHistorySchema = z.array(z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+}));
 
-const DataBreachCheckOutputSchema = z.object({
-  isBreached: z.boolean().describe("Whether the email was found in any breaches."),
-  breaches: z.array(BreachDetailSchema).describe("A list of breach details if the email was found. Empty if not breached."),
-  recommendation: z.string().describe("A summary recommendation for the user based on the findings."),
-  emailExists: z.boolean().describe("This field is now an indicator of whether the HIBP API found any results for the email."),
-});
-export type DataBreachCheckOutput = z.infer<typeof DataBreachCheckOutputSchema>;
-
-
-// Exported Function to call the flow
-export async function checkDataBreach(input: DataBreachCheckInput): Promise<DataBreachCheckOutput> {
-  return checkDataBreachFlow(input);
+export interface ClientMessage {
+  id: string;
+  sender: 'user' | 'ai' | 'system';
+  text: string;
+  image?: string;
+  threatAssessment?: AssessThreatOutput;
+  screenshotAnalysis?: AnalyzeScreenshotOutput;
+  isLoading?: boolean;
 }
 
-// The Genkit Flow
-const checkDataBreachFlow = ai.defineFlow(
-  {
-    name: 'checkDataBreachFlow',
-    inputSchema: DataBreachCheckInputSchema,
-    outputSchema: DataBreachCheckOutputSchema,
-  },
-  async ({ email }) => {
-    const apiKey = process.env.HIBP_API_KEY;
-
-    if (!apiKey) {
-        throw new Error("HIBP_API_KEY is not configured. Please set it in your environment variables.");
-    }
-    
-    const hibpApiUrl = `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}`;
-
-    try {
-        const response = await fetch(hibpApiUrl, {
-            headers: {
-                'hibp-api-key': apiKey,
-                'user-agent': 'CyGuard-App-Prototype'
-            }
-        });
-
-        if (response.status === 404) {
-            // 404 means the email was not found in any breaches, which is a good thing.
-            return {
-                isBreached: false,
-                breaches: [],
-                recommendation: `Good news! The email address ${email} was not found in any of the data breaches indexed by 'Have I Been Pwned?'. Continue to practice good security hygiene.`,
-                emailExists: true, // The API call was successful, and we have a definitive "not found" answer.
-            };
-        }
-
-        if (!response.ok) {
-            // Handle other non-successful responses (e.g., 400, 401, 403, 500)
-            const errorText = await response.text();
-            throw new Error(`HIBP API request failed with status ${response.status}: ${errorText}`);
-        }
-
-        const breachData = await response.json();
-        
-        if (!Array.isArray(breachData) || breachData.length === 0) {
-            return {
-                isBreached: false,
-                breaches: [],
-                recommendation: `The email address ${email} was not found in any known breaches.`,
-                emailExists: true,
-            };
-        }
-        
-        const breaches: BreachDetail[] = breachData.map((item: any) => ({
-            name: item.Name,
-            date: item.BreachDate,
-            compromisedData: item.DataClasses,
-            summary: item.Description.replace(/<a[^>]*>|<\/a>/g, ''), // Strip HTML tags from summary
-        }));
-
-        return {
-            isBreached: true,
-            breaches,
-            recommendation: `The email address ${email} was found in ${breaches.length} known breach(es). It is highly recommended to change the passwords for any accounts associated with this email, especially on the services listed. Enable Two-Factor Authentication (2FA) wherever possible.`,
-            emailExists: true,
-        };
-
-    } catch (error: any) {
-        console.error("Error calling HIBP API:", error);
-        // We can't definitively say if the email exists or not, so we should reflect that.
-        return {
-            isBreached: false,
-            breaches: [],
-            recommendation: `Could not check email due to an error: ${error.message}. This could be due to a network issue or an invalid API key.`,
-            emailExists: false, 
-        };
-    }
+export async function handleUserMessage(
+  messageId: string,
+  userInput: string,
+  history: { role: 'user' | 'model'; content: string }[],
+): Promise<ClientMessage | { error: string }> {
+  
+  const parsedInput = chatInputSchema.safeParse({ message: userInput });
+  if (!parsedInput.success) {
+    return { error: parsedInput.error.errors.map(e => e.message).join(', ') };
   }
-);
+
+  const parsedHistory = chatHistorySchema.safeParse(history);
+  if (!parsedHistory.success) {
+     return { error: "Invalid chat history format." };
+  }
+
+  try {
+    const aiResponse = await assessThreat({
+        user_input: parsedInput.data.message,
+        history: parsedHistory.data,
+    });
+    
+    return {
+        id: messageId,
+        sender: 'ai',
+        text: aiResponse.response,
+        threatAssessment: aiResponse,
+        isLoading: false,
+    };
+  } catch (error) {
+    console.error("Error handling user message:", error);
+    return { error: "Sorry, I encountered an issue processing your request. Please try again." };
+  }
+}
+
+const phishingReportSchema = z.object({
+  content: z.string().min(10, "Report content is too short.").max(5000, "Report content is too long."),
+});
+
+export async function handlePhishingReport(
+  reportContent: string
+): Promise<{ success: true; assessment: AssessThreatOutput } | { success: false; error: string }> {
+  const parsedReport = phishingReportSchema.safeParse({ content: reportContent });
+
+  if (!parsedReport.success) {
+    return { success: false, error: parsedReport.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    // Phishing report is a one-shot analysis, so no history is passed.
+    const aiResponse = await assessThreat({ user_input: parsedReport.data.content, history: [] });
+    return { success: true, assessment: aiResponse };
+  } catch (error) {
+    console.error("Error calling assessThreat flow for phishing report:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the report. Please try again." };
+  }
+}
+
+const securityLogSchema = z.object({
+  logContent: z.string().min(10, "Log content is too short.").max(10000, "Log content is too long. Please provide a smaller snippet or break it into parts."),
+});
+
+export async function handleLogAnalysis(
+  logContent: string
+): Promise<{ success: true; analysis: AnalyzeSecurityLogOutput } | { success: false; error: string }> {
+  const parsedLog = securityLogSchema.safeParse({ logContent });
+
+  if (!parsedLog.success) {
+    return { success: false, error: parsedLog.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeSecurityLog({ logContent: parsedLog.data.logContent });
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeSecurityLog flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the logs. Please try again." };
+  }
+}
+
+
+export async function handleFetchThreatIntel(): Promise<{ success: true; data: FetchThreatIntelOutput } | { success: false; error: string }> {
+  try {
+    const intelData = await fetchThreatIntel({}); // Empty input for now
+    return { success: true, data: intelData };
+  } catch (error) {
+    console.error("Error calling fetchThreatIntel flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue fetching threat intelligence. Please try again." };
+  }
+}
+
+export async function handleWifiAnalysis(
+  networks: WifiNetworkInput[]
+): Promise<{ success: true; analysis: AnalyzeWifiOutput } | { success: false; error: string }> {
+  const parsedInput = AnalyzeWifiInputSchema.safeParse({ networks });
+
+  if (!parsedInput.success) {
+    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeWifiNetworks(parsedInput.data);
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeWifiNetworks flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the Wi-Fi networks. Please try again." };
+  }
+}
+
+export async function handleScreenshotAnalysis(
+  prompt: string,
+  screenshotDataUri: string
+): Promise<{ success: true; analysis: AnalyzeScreenshotOutput } | { success: false; error: string }> {
+  const parsedInput = AnalyzeScreenshotInputSchema.safeParse({ prompt, screenshotDataUri });
+
+  if (!parsedInput.success) {
+    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzeScreenshot(parsedInput.data);
+    return { success: true, analysis: aiResponse };
+  } catch (error) {
+    console.error("Error calling analyzeScreenshot flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue analyzing the screenshot. Please try again." };
+  }
+}
