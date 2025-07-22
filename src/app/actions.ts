@@ -6,6 +6,7 @@ import { analyzeSecurityLog, type AnalyzeSecurityLogOutput } from '@/ai/flows/an
 import { fetchThreatIntel, type FetchThreatIntelOutput } from '@/ai/flows/fetch-threat-intel-flow';
 import { analyzeWifiNetworks } from '@/ai/flows/analyze-wifi-flow';
 import { analyzeScreenshot } from '@/ai/flows/analyze-screenshot-flow';
+import { checkDataBreach, type DataBreachCheckOutput } from '@/ai/flows/check-data-breach-flow';
 import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput } from '@/ai/schemas/wifi-analysis-schemas';
 import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
@@ -155,5 +156,27 @@ export async function handleScreenshotAnalysis(
   } catch (error) {
     console.error("Error calling analyzeScreenshot flow:", error);
     return { success: false, error: "Sorry, I encountered an issue analyzing the screenshot. Please try again." };
+  }
+}
+
+const dataBreachCheckSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+});
+
+export async function handleDataBreachCheck(
+  email: string
+): Promise<{ success: true; result: DataBreachCheckOutput } | { success: false; error: string }> {
+  const parsedEmail = dataBreachCheckSchema.safeParse({ email });
+
+  if (!parsedEmail.success) {
+    return { success: false, error: parsedEmail.error.errors.map((e) => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await checkDataBreach({ email: parsedEmail.data.email });
+    return { success: true, result: aiResponse };
+  } catch (error) {
+    console.error("Error calling checkDataBreach flow:", error);
+    return { success: false, error: "Sorry, I encountered an issue checking the email. Please try again." };
   }
 }
