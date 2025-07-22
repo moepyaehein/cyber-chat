@@ -23,7 +23,7 @@ export const knowledgeBase: KnowledgeArticle[] = [
     difficulty: "Beginner",
     tags: ["phishing", "email security", "scams"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1599837563332-3576a45e9a41?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "hooded hacker"
     },
     content: `
@@ -48,7 +48,7 @@ Phishing is a type of cyber attack where attackers impersonate legitimate organi
     difficulty: "Beginner",
     tags: ["passwords", "account security"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1558021211-6514f39794a0?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "digital padlock"
     },
     content: `
@@ -69,7 +69,7 @@ A strong password is a critical component of your online security.
     difficulty: "Beginner",
     tags: ["2fa", "mfa", "account security"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1616401784845-180842464539?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "phone security"
     },
     content: `
@@ -93,7 +93,7 @@ If a hacker steals your password, they still won't be able to log in without acc
     difficulty: "Intermediate",
     tags: ["malware", "viruses", "ransomware", "spyware"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1547658719-da2b51169166?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "computer virus"
     },
     content: `
@@ -119,7 +119,7 @@ Malware, short for malicious software, is any software intentionally designed to
     difficulty: "Intermediate",
     tags: ["browsing", "privacy", "https-everywhere"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1614064548237-02f4f79669e4?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "secure browsing"
     },
     content: `
@@ -140,7 +140,7 @@ Staying safe online involves developing good habits.
     difficulty: "Advanced",
     tags: ["encryption", "cryptography", "data security"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1633265486064-086b219458ec?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "digital encryption"
     },
     content: `
@@ -160,7 +160,7 @@ This public-private key pair is the foundation of modern secure communication, i
     difficulty: "Advanced",
     tags: ["supply-chain", "software security", "vulnerabilities"],
     image: {
-      url: "https://placehold.co/600x400.png",
+      url: "https://images.unsplash.com/photo-1560066982-320b6557475a?q=80&w=600&h=400&auto=format&fit=crop",
       hint: "supply chain"
     },
     content: `
