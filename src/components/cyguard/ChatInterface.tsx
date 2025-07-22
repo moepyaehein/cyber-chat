@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import ChatMessageItem, { type Message as ChatMessageType } from './ChatMessageItem';
+import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
 import { SendHorizontal, Paperclip, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import type { ClientMessage } from '@/app/actions';
 
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
@@ -49,7 +50,7 @@ const chatFormSchema = z.object({
 
 type ChatFormValues = z.infer<typeof chatFormSchema>;
 
-const initialMessage: ChatMessageType = {
+const initialMessage: ClientMessage = {
   id: 'initial-message',
   sender: 'ai',
   text: "Hello! I'm CyGuard. Paste a suspicious message, link, or attach a screenshot below.\n\nYour conversation is stored locally in your browser for your convenience. You can clear the history at any time using the trash icon.",
@@ -57,7 +58,7 @@ const initialMessage: ChatMessageType = {
 };
 
 const ChatInterface: FC = () => {
-  const [messages, setMessages] = useState<ChatMessageType[]>([initialMessage]);
+  const [messages, setMessages] = useState<ClientMessage[]>([initialMessage]);
   const { toast } = useToast();
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +93,7 @@ const ChatInterface: FC = () => {
   useEffect(() => {
     try {
         // We only save if there's more than the initial message.
-        if (messages.length > 1) {
+        if (messages.length > 1 || (messages.length === 1 && messages[0].id !== 'initial-message')) {
             // Filter out any loading messages before saving
             const historyToSave = messages.filter(m => !m.isLoading);
             localStorage.setItem('cyguard-chat-history', JSON.stringify(historyToSave));
@@ -170,7 +171,7 @@ const ChatInterface: FC = () => {
         imageAsDataUrl = await fileToBase64(data.image[0]);
     }
 
-    const userMessage: ChatMessageType = {
+    const userMessage: ClientMessage = {
       id: userMessageId,
       sender: 'user',
       text: data.message ?? "",
@@ -179,7 +180,7 @@ const ChatInterface: FC = () => {
     };
 
     const aiThinkingMessageId = uuidv4();
-    const aiThinkingMessage: ChatMessageType = {
+    const aiThinkingMessage: ClientMessage = {
       id: aiThinkingMessageId,
       sender: 'ai',
       text: '', 
@@ -194,7 +195,7 @@ const ChatInterface: FC = () => {
 
 
     const history = currentMessages
-      .filter(m => !m.isLoading && !m.screenshotAnalysis)
+      .filter(m => !m.isLoading && !m.screenshotAnalysis && m.id !== 'initial-message')
       .map(m => ({
         role: m.sender === 'user' ? 'user' : 'model',
         content: m.text,
@@ -222,7 +223,7 @@ const ChatInterface: FC = () => {
             <h2 className="text-lg font-semibold">CyGuard Chat</h2>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={messages.length <= 1}>
+                <Button variant="destructive" size="sm" disabled={messages.length <= 1 && messages[0]?.id === 'initial-message'}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Clear History
                 </Button>
@@ -280,7 +281,9 @@ const ChatInterface: FC = () => {
             {...restImageInput}
             ref={(e) => {
               imageInputRef(e);
-              fileInputRef.current = e;
+              if(e) {
+                fileInputRef.current = e;
+              }
             }}
             className="hidden"
             accept={ACCEPTED_IMAGE_TYPES.join(',')}
@@ -306,6 +309,3 @@ const ChatInterface: FC = () => {
 };
 
 export default ChatInterface;
-
-
-    

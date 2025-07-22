@@ -3,28 +3,16 @@ import type { FC } from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BotMessageSquare, UserCircle2, Terminal, ShieldQuestion, AlertTriangle, CheckCircle, Info, ListChecks, Activity } from 'lucide-react';
+import { BotMessageSquare, UserCircle2, Terminal, ShieldQuestion, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { AssessThreatOutput } from '@/ai/flows/assess-threat';
-import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
+import type { ClientMessage } from '@/app/actions';
 import ThreatLevelIndicator from './ThreatLevelIndicator';
 import ActionStepsList from './ActionStepsList';
 import LoadingDots from './LoadingDots';
 import { Badge } from '../ui/badge';
 
-
-export interface Message {
-  id: string;
-  sender: 'user' | 'ai' | 'system';
-  text: string;
-  image?: string;
-  threatAssessment?: AssessThreatOutput;
-  screenshotAnalysis?: AnalyzeScreenshotOutput;
-  isLoading?: boolean;
-}
-
 interface ChatMessageItemProps {
-  message: Message;
+  message: ClientMessage;
 }
 
 interface CodeBlock {
@@ -92,9 +80,8 @@ function parseMessageText(text: string): ParsedContent {
 const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
   const isUser = message.sender === 'user';
   const isAI = message.sender === 'ai';
-  const isSystem = message.sender === 'system';
 
-  if (isSystem) {
+  if (message.sender === 'system') { // Should not happen with ClientMessage, but as a fallback
     return (
       <div className="text-center text-xs text-muted-foreground py-2 px-4">{message.text}</div>
     );
