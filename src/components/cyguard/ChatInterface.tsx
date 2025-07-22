@@ -215,9 +215,11 @@ const ChatInterface: FC = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                       <DialogTrigger asChild>
-                         <Button variant="secondary">Save First</Button>
-                       </DialogTrigger>
+                       <AlertDialogAction onClick={() => {
+                        setSaveDialogOpen(true);
+                      }}>
+                         Save First
+                       </AlertDialogAction>
                       <AlertDialogAction onClick={handleStartNewChat}>
                         Start New
                       </AlertDialogAction>
