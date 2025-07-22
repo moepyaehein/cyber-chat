@@ -1,5 +1,7 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Directly use the environment variables
 const firebaseConfig = {
@@ -14,12 +16,13 @@ const firebaseConfig = {
 // Initialize Firebase
 let app: FirebaseApp;
 let auth: Auth;
+let firestore: Firestore;
 
 if (!getApps().length) {
   try {
-    console.log("Initializing Firebase with config:", firebaseConfig);
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+    firestore = getFirestore(app);
   } catch (error) {
     console.error("Firebase initialization error:", error);
     throw new Error("Firebase initialization failed");
@@ -27,6 +30,7 @@ if (!getApps().length) {
 } else {
   app = getApp();
   auth = getAuth(app);
+  firestore = getFirestore(app);
 }
 
-export { app, auth };
+export { app, auth, firestore };

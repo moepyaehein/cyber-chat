@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Paperclip, X, PlusSquare } from 'lucide-react';
+import { SendHorizontal, Paperclip, X, PlusSquare, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -109,6 +109,14 @@ const ChatInterface: FC = () => {
     }
   }, [errors.message, errors.image, toast]);
 
+  // Set chat title for save dialog when it opens
+  useEffect(() => {
+      if (isSaveDialogOpen) {
+          const defaultTitle = activeChat.messages.find(m => m.sender === 'user')?.text.substring(0, 40) || activeChat.title;
+          setChatTitle(activeChat.title === "New Chat" ? defaultTitle : activeChat.title);
+      }
+  }, [isSaveDialogOpen, activeChat]);
+
 
   const handleStartNewChat = () => {
     reset();
@@ -116,16 +124,20 @@ const ChatInterface: FC = () => {
     startNewChat();
   };
   
-  const handleSaveChat = () => {
-    const defaultTitle = activeChat.messages.find(m => m.sender === 'user')?.text.substring(0, 30) || `Chat - ${new Date().toLocaleString()}`;
-    const finalTitle = chatTitle.trim() || defaultTitle;
-    saveCurrentChat(finalTitle);
+  const handleSaveChat = async () => {
+    const finalTitle = chatTitle.trim() || "Untitled Chat";
+    await saveCurrentChat(finalTitle);
     setChatTitle('');
     setSaveDialogOpen(false);
     toast({
       title: "Chat Saved",
       description: `Your conversation "${finalTitle}" has been saved.`
     });
+  }
+  
+  const promptToSaveAndStartNew = async () => {
+      await handleSaveChat();
+      handleStartNewChat();
   }
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -197,7 +209,7 @@ const ChatInterface: FC = () => {
   return (
     <div className="flex flex-col h-full bg-transparent">
         <div className="flex-shrink-0 flex items-center justify-between p-2 border-b gap-2">
-            <h2 className="text-lg font-semibold">{activeChat.title}</h2>
+            <h2 className="text-lg font-semibold truncate pr-4">{activeChat.title}</h2>
             <div className="flex items-center gap-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -216,12 +228,12 @@ const ChatInterface: FC = () => {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                        <AlertDialogAction onClick={() => {
-                        setSaveDialogOpen(true);
-                      }}>
+                           setSaveDialogOpen(true);
+                       }}>
                          Save First
                        </AlertDialogAction>
                       <AlertDialogAction onClick={handleStartNewChat}>
-                        Start New
+                        Start New (Don't Save)
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -229,7 +241,10 @@ const ChatInterface: FC = () => {
                 
                 <Dialog open={isSaveDialogOpen} onOpenChange={setSaveDialogOpen}>
                    <DialogTrigger asChild>
-                     <Button size="sm" disabled={isChatPristine}>Save Chat</Button>
+                     <Button size="sm" disabled={isChatPristine}>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save
+                     </Button>
                    </DialogTrigger>
                    <DialogContent>
                      <DialogHeader>

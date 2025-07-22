@@ -50,7 +50,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
   const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
 
-  const { savedChats, loadChat, deleteChat, activeChat } = useChatHistory();
+  const { savedChats, loadChat, deleteChat, activeChat, isLoading: isChatHistoryLoading } = useChatHistory();
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -78,9 +78,9 @@ const Sidebar: FC<SidebarProps> = () => {
     toast({ title: "Logged Out", description: "You have been successfully logged out."});
   }
 
-  const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
+  const handleDeleteChat = async (e: React.MouseEvent, chatId: string) => {
     e.stopPropagation(); // prevent loading the chat
-    deleteChat(chatId);
+    await deleteChat(chatId);
     toast({
       title: "Chat Deleted",
       description: "The conversation has been removed.",
@@ -171,7 +171,12 @@ const Sidebar: FC<SidebarProps> = () => {
                  <SidebarGroup>
                     <SidebarGroupLabel>Saved Chats</SidebarGroupLabel>
                     <div className="flex flex-col gap-1 overflow-y-auto max-h-48">
-                      {savedChats.length > 0 ? (
+                      {isChatHistoryLoading ? (
+                         <div className="p-2 space-y-2">
+                            <div className="h-6 bg-muted rounded animate-pulse group-data-[collapsible=icon]:hidden"></div>
+                             <div className="h-6 bg-muted rounded animate-pulse group-data-[collapsible=icon]:hidden"></div>
+                          </div>
+                      ) : savedChats.length > 0 ? (
                         savedChats.map((chat) => (
                           <SidebarMenuItem key={chat.id} className="relative group/chat-item">
                             <SidebarMenuButton
@@ -193,7 +198,7 @@ const Sidebar: FC<SidebarProps> = () => {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Delete "{chat.title}"?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                    This will permanently delete this chat history. This action cannot be undone.
+                                    This will permanently delete this chat history from your account. This action cannot be undone.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

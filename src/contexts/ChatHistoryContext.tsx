@@ -6,6 +6,8 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { v4 as uuidv4 } from 'uuid';
 import type { ClientMessage } from '@/app/actions';
 import { useAuth } from './AuthContext';
+import { firestore } from '@/lib/firebase';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
 const initialMessage: ClientMessage = {
   id: 'initial-message',
@@ -27,8 +29,9 @@ interface ChatHistoryContextType {
   setActiveChat: Dispatch<SetStateAction<ChatSession>>;
   loadChat: (chatId: string) => void;
   startNewChat: () => void;
-  saveCurrentChat: (title: string) => void;
-  deleteChat: (chatId: string) => void;
+  saveCurrentChat: (title: string) => Promise<void>;
+  deleteChat: (chatId: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const ChatHistoryContext = createContext<ChatHistoryContextType | undefined>(undefined);
@@ -44,34 +47,49 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [savedChats, setSavedChats] = useState<ChatSession[]>([]);
   const [activeChat, setActiveChat] = useState<ChatSession>(createNewChat());
-  
-  const storageKey = `cyguard-chat-history-${user?.uid}`;
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load saved chats from localStorage on mount
+  // Effect to listen for real-time updates from Firestore
   useEffect(() => {
-    if (!user) return; // Don't load if no user
-    try {
-      const savedHistory = localStorage.getItem(storageKey);
-      if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
-        if (Array.isArray(parsedHistory)) {
-          setSavedChats(parsedHistory);
-        }
-      }
-    } catch (error) {
-      console.error("Could not load chat history from localStorage", error);
+    if (!user) {
+      setSavedChats([]);
+      setActiveChat(createNewChat());
+      setIsLoading(false);
+      return;
     }
-  }, [user, storageKey]);
 
-  // Effect to update localStorage whenever savedChats changes
-  const _updateStorage = (chats: ChatSession[]) => {
-    if (!user) return;
-    try {
-        localStorage.setItem(storageKey, JSON.stringify(chats));
-    } catch (error) {
-        console.error("Could not save chat history to localStorage", error);
-    }
-  };
+    setIsLoading(true);
+    const chatsCollectionRef = collection(firestore, `users/${user.uid}/chats`);
+    const q = query(chatsCollectionRef, orderBy('timestamp', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const chats: ChatSession[] = [];
+      querySnapshot.forEach((doc) => {
+        chats.push(doc.data() as ChatSession);
+      });
+      setSavedChats(chats);
+      
+      // Prevent resetting active chat on subsequent updates unless it was deleted
+      if (isInitialLoad) {
+          setActiveChat(chats[0] || createNewChat());
+          setIsInitialLoad(false);
+      } else {
+         const activeChatExists = chats.some(c => c.id === activeChat.id);
+         if (!activeChatExists) {
+            setActiveChat(chats[0] || createNewChat());
+         }
+      }
+
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Error fetching chat history from Firestore:", error);
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [user]);
 
   const loadChat = (chatId: string) => {
     const chatToLoad = savedChats.find(c => c.id === chatId);
@@ -84,39 +102,47 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
     setActiveChat(createNewChat());
   };
 
-  const saveCurrentChat = (title: string) => {
-    const existingChatIndex = savedChats.findIndex(c => c.id === activeChat.id);
-    let updatedChats;
+  const saveCurrentChat = async (title: string) => {
+    if (!user) {
+      console.error("Cannot save chat: no user logged in.");
+      return;
+    }
 
-    const chatToSave = {
-        ...activeChat,
-        title, // Update title
-        timestamp: Date.now(), // Update timestamp
+    const chatToSave: ChatSession = {
+      ...activeChat,
+      title, // Update title with user-provided one
+      timestamp: Date.now(), // Update timestamp on save
     };
     
-    if (existingChatIndex > -1) {
-      // Update existing chat
-      updatedChats = savedChats.map((c, index) => index === existingChatIndex ? chatToSave : c);
-    } else {
-      // Add new chat
-      updatedChats = [...savedChats, chatToSave];
-    }
-    
-    // Sort by most recent
-    updatedChats.sort((a,b) => b.timestamp - a.timestamp);
+    // Check if it's a new chat not yet in savedChats
+    const isNewChat = !savedChats.some(c => c.id === chatToSave.id);
 
-    setSavedChats(updatedChats);
-    _updateStorage(updatedChats);
+    try {
+      const chatDocRef = doc(firestore, `users/${user.uid}/chats`, chatToSave.id);
+      await setDoc(chatDocRef, chatToSave);
+      
+      // If it was a new chat, it will now be part of the snapshot listener's update.
+      // We can also optimistically update the state if needed, but the listener handles it.
+      setActiveChat(chatToSave); // Ensure active chat has the new title
+
+    } catch (error) {
+      console.error("Error saving chat to Firestore:", error);
+    }
   };
 
-  const deleteChat = (chatId: string) => {
-    const updatedChats = savedChats.filter(c => c.id !== chatId);
-    setSavedChats(updatedChats);
-    _updateStorage(updatedChats);
-
-    // If the deleted chat was the active one, start a new chat
-    if (activeChat.id === chatId) {
-      startNewChat();
+  const deleteChat = async (chatId: string) => {
+     if (!user) {
+      console.error("Cannot delete chat: no user logged in.");
+      return;
+    }
+    
+    try {
+        const chatDocRef = doc(firestore, `users/${user.uid}/chats`, chatId);
+        await deleteDoc(chatDocRef);
+        // The onSnapshot listener will automatically update the UI.
+        // If the deleted chat was the active one, the useEffect will handle resetting it.
+    } catch (error) {
+        console.error("Error deleting chat from Firestore:", error);
     }
   };
 
@@ -128,7 +154,8 @@ export const ChatHistoryProvider = ({ children }: { children: ReactNode }) => {
       loadChat,
       startNewChat,
       saveCurrentChat,
-      deleteChat
+      deleteChat,
+      isLoading
     }}>
       {children}
     </ChatHistoryContext.Provider>
