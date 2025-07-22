@@ -56,6 +56,8 @@ const ChatInterface: FC = () => {
   });
 
   const imageFile = watch('image');
+  const { ref: imageInputRef, ...restImageInput } = register('image');
+
 
   useEffect(() => {
     if (imageFile && imageFile.length > 0) {
@@ -189,8 +191,11 @@ const ChatInterface: FC = () => {
           />
           <input
             type="file"
-            {...register('image')}
-            ref={fileInputRef}
+            {...restImageInput}
+            ref={(e) => {
+              imageInputRef(e);
+              fileInputRef.current = e;
+            }}
             className="hidden"
             accept={ACCEPTED_IMAGE_TYPES.join(',')}
             disabled={isSubmitting}
