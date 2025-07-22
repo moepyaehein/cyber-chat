@@ -1,211 +1,211 @@
+
 "use client";
 
 import type { FC } from "react";
 import { useState } from "react";
-import Link from 'next/link';
-import {
-  Sidebar as ShadSidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarSeparator,
-  SidebarGroup,
-  SidebarGroupLabel,
-} from "@/components/ui/sidebar";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import ReportPhishingDialog from "./ReportPhishingDialog";
-import ScanLogsDialog from "./ScanLogsDialog";
-import ThreatIntelDialog from "./ThreatIntelDialog";
-import WifiHunterDialog from "./WifiHunterDialog";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePathname } from "next/navigation";
-import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertTriangle, ShieldCheck, ShieldAlert, BadgeCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import type { BreachDetail, CheckDataBreachOutput } from "@/ai/flows/check-data-breach-flow";
+import { checkDataBreach } from "@/app/actions";
+import LoadingDots from "./LoadingDots";
 
-interface SidebarProps {}
 
-const Sidebar: FC<SidebarProps> = () => {
+const checkBreachSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address." }),
+});
+
+type CheckBreachFormValues = z.infer<typeof checkBreachSchema>;
+
+interface DataBreachCheckDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
+const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenChange }) => {
   const { toast } = useToast();
-  const { user, signOut, loading } = useAuth();
-  const pathname = usePathname();
-  const [isReportPhishingOpen, setIsReportPhishingOpen] = useState(false);
-  const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
-  const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
-  const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
-  const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
+  const [view, setView] = useState<'form' | 'result'>('form');
+  const [analysisResult, setAnalysisResult] = useState<CheckDataBreachOutput | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
 
-  const handleQuickAction = (action: string) => {
-    if (!user) {
-        toast({ title: "Authentication Required", description: "Please log in to use this feature.", variant: "destructive" });
-        return;
+  const form = useForm<CheckBreachFormValues>({
+    resolver: zodResolver(checkBreachSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const resetDialogState = () => {
+    form.reset();
+    setAnalysisResult(null);
+    setView('form');
+    setIsChecking(false);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      resetDialogState();
     }
-    if (action === "Report Phishing") {
-      setIsReportPhishingOpen(true);
-    } else if (action === "Scan Logs") {
-      setIsScanLogsOpen(true);
-    } else if (action === "Threat Intel") {
-      setIsThreatIntelOpen(true);
-    } else if (action === "Wi-Fi Hunter") {
-      setIsWifiHunterOpen(true);
-    } else if (action === "Analyze Screenshot") {
-      setIsAnalyzeScreenshotOpen(true);
-    }
-     else {
+    onOpenChange(open);
+  };
+
+  const onSubmit: SubmitHandler<CheckBreachFormValues> = async (data) => {
+    setIsChecking(true);
+    setAnalysisResult(null);
+
+    const result = await checkDataBreach(data.email);
+    setIsChecking(false);
+
+    if (result.success) {
       toast({
-        title: "Action Triggered",
-        description: `${action} action has been initiated.`,
+        title: 'Check Complete',
+        description: result.data.message,
       });
+      setAnalysisResult(result.data);
+      setView('result');
+    } else {
+      toast({
+        title: 'Check Failed',
+        description: result.error,
+        variant: 'destructive',
+      });
+      setView('form');
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    toast({ title: "Logged Out", description: "You have been successfully logged out."});
-  }
+  const getResultIcon = () => {
+    if (!analysisResult) return null;
+    if (analysisResult.breaches.length > 0) {
+      return <ShieldAlert className="h-16 w-16 text-destructive" />;
+    }
+    if (analysisResult.found) {
+        return <ShieldCheck className="h-16 w-16 text-green-500" />;
+    }
+    return <BadgeCheck className="h-16 w-16 text-primary" />;
+  };
 
   return (
-    <>
-      <ShadSidebar collapsible="icon" variant="sidebar" side="left">
-        <SidebarHeader className="items-center justify-center p-4">
-            <Link href="/" className="flex items-center justify-center gap-2">
-                <Shield className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
-                <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">
-                    CyGuard
-                </h1>
-            </Link>
-        </SidebarHeader>
-        <SidebarContent className="p-2">
-          {user && !loading && (
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <Link href="/home" legacyBehavior passHref>
-                        <SidebarMenuButton
-                        isActive={pathname === '/home'}
-                        tooltip={{children: "Chat", side: "right", align:"center"}}
-                        >
-                        <Home />
-                        <span>Chat</span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <Link href="/knowledge" legacyBehavior passHref>
-                        <SidebarMenuButton
-                        isActive={pathname.startsWith('/knowledge')}
-                        tooltip={{children: "Knowledge Base", side: "right", align:"center"}}
-                        >
-                        <GraduationCap />
-                        <span>Knowledge Base</span>
-                        </SidebarMenuButton>
-                    </Link>
-                </SidebarMenuItem>
-                
-                <SidebarSeparator />
-                
-                <SidebarGroup>
-                    <SidebarGroupLabel>Tools</SidebarGroupLabel>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Report Phishing")}
-                        tooltip={{children: "Report Phishing", side: "right", align:"center"}}
-                        >
-                        <FileWarning />
-                        <span>Report Phishing</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Wi-Fi Hunter")}
-                        tooltip={{children: "Wi-Fi Hunter", side: "right", align:"center"}}
-                        >
-                        <Wifi />
-                        <span>Wi-Fi Hunter</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Scan Logs")}
-                        tooltip={{children: "Scan Logs", side: "right", align:"center"}}
-                        >
-                        <ScanLine />
-                        <span>Scan Logs</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Threat Intel")}
-                        tooltip={{children: "Threat Intel", side: "right", align:"center"}}
-                        >
-                        <BrainCircuit />
-                        <span>Threat Intel</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarGroup>
-            </SidebarMenu>
-          )}
-          {!user && !loading && (
-             <SidebarMenu>
-                <SidebarMenuItem>
-                    <Button variant="outline" className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8" asChild>
-                        <Link href="/signin">
-                            <LogIn className="group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:w-4" />
-                            <span className="group-data-[collapsible=icon]:hidden">Login</span>
-                        </Link>
-                    </Button>
-                </SidebarMenuItem>
-            </SidebarMenu>
-          )}
-           {loading && (
-            <div className="p-2 space-y-2">
-              <div className="h-8 bg-muted rounded animate-pulse group-data-[collapsible=icon]:w-8"></div>
-              <div className="h-8 bg-muted rounded animate-pulse group-data-[collapsible=icon]:w-8"></div>
-              <div className="h-8 bg-muted rounded animate-pulse group-data-[collapsible=icon]:w-8"></div>
-            </div>
-          )}
-        </SidebarContent>
-        <SidebarFooter className="p-2 items-center flex-row justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-2">
-           <ThemeToggle />
-           {user && !loading && (
-             <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
-                onClick={handleLogout}
-                aria-label="Logout"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-           )}
-        </SidebarFooter>
-      </ShadSidebar>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
+      <DialogContent className={view === 'form'
+        ? "sm:max-w-md"
+        : "sm:max-w-2xl max-h-[90vh] flex flex-col"
+      }>
+        {view === 'form' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Data Breach Check
+              </DialogTitle>
+              <DialogDescription>
+                Enter an email address to see if it has appeared in known data breaches. This is a mock service for demonstration.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="email-check" className="sr-only">Email Address</Label>
+                      <FormControl>
+                        <Input id="email-check" placeholder="e.g., test@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-      <ReportPhishingDialog
-        isOpen={isReportPhishingOpen}
-        onOpenChange={setIsReportPhishingOpen}
-      />
-      <ScanLogsDialog
-        isOpen={isScanLogsOpen}
-        onOpenChange={setIsScanLogsOpen}
-      />
-      <ThreatIntelDialog
-        isOpen={isThreatIntelOpen}
-        onOpenChange={setIsThreatIntelOpen}
-      />
-      <WifiHunterDialog
-        isOpen={isWifiHunterOpen}
-        onOpenChange={setIsWifiHunterOpen}
-      />
-      <AnalyzeScreenshotDialog
-        isOpen={isAnalyzeScreenshotOpen}
-        onOpenChange={setIsAnalyzeScreenshotOpen}
-        onAnalysisComplete={() => {
-            // This is now handled inside the chat interface
-        }}
-      />
-    </>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={isChecking}>Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isChecking}>
+                    {isChecking ? <><LoadingDots /> Checking...</> : "Check Email"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </>
+        )}
+
+        {view === 'result' && analysisResult && (
+          <>
+            <DialogHeader className="text-center items-center pb-4">
+               {getResultIcon()}
+              <DialogTitle className="text-xl">
+                Analysis for: <span className="font-mono text-primary">{form.getValues('email')}</span>
+              </DialogTitle>
+              <DialogDescription className="max-w-md mx-auto">
+                {analysisResult.message}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full pr-4">
+                  {analysisResult.breaches.length > 0 ? (
+                      <div className="space-y-3 py-2">
+                      {analysisResult.breaches.map((breach, index) => (
+                        <Card key={index} className="bg-muted/30">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                               <AlertTriangle className="h-4 w-4 text-destructive" /> {breach.name}
+                            </CardTitle>
+                             <p className="text-xs text-muted-foreground pt-1">Breach Date: {breach.date}</p>
+                          </CardHeader>
+                          <CardContent className="space-y-2 text-sm">
+                            <p className="text-muted-foreground">{breach.description}</p>
+                            <div>
+                                <h4 className="font-medium text-foreground/90 mb-1">Compromised Data:</h4>
+                                <div className="flex flex-wrap gap-1">
+                                    {breach.dataClasses.map(dc => (
+                                        <Badge key={dc} variant="secondary">{dc}</Badge>
+                                    ))}
+                                </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-muted/30 rounded-lg">
+                        <BadgeCheck className="h-12 w-12 text-green-500 mb-4" />
+                        <h3 className="text-lg font-semibold">No Breaches Found</h3>
+                        <p className="text-muted-foreground">This email address was not found in any of the data breaches in our current dataset.</p>
+                    </div>
+                  )}
+                </ScrollArea>
+            </div>
+            <DialogFooter className="mt-auto pt-4 border-t">
+              <Button type="button" onClick={resetDialogState}>Check Another</Button>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Close</Button>
+              </DialogClose>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default Sidebar;
+export default DataBreachCheckDialog;

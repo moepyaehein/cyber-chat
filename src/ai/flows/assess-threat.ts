@@ -60,6 +60,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 
 {{#if CONTEXT}}
 Knowledge Base Context:
+This context is from our knowledge base and is highly relevant to the user's question. Use it as the primary source for your answer.
 {{#each CONTEXT}}
 - **{{metadata.title}}**: {{content}}
 {{/each}}

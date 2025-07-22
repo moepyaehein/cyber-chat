@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from "react";
@@ -16,7 +17,7 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf } from "lucide-react";
+import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import ReportPhishingDialog from "./ReportPhishingDialog";
@@ -26,6 +27,7 @@ import WifiHunterDialog from "./WifiHunterDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
+import DataBreachCheckDialog from "./DataBreachCheckDialog";
 
 interface SidebarProps {}
 
@@ -38,6 +40,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
   const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
   const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
+  const [isDataBreachCheckOpen, setIsDataBreachCheckOpen] = useState(false);
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -54,6 +57,8 @@ const Sidebar: FC<SidebarProps> = () => {
       setIsWifiHunterOpen(true);
     } else if (action === "Analyze Screenshot") {
       setIsAnalyzeScreenshotOpen(true);
+    } else if (action === "Data Breach Check") {
+        setIsDataBreachCheckOpen(true);
     }
      else {
       toast({
@@ -125,6 +130,15 @@ const Sidebar: FC<SidebarProps> = () => {
                         >
                         <Wifi />
                         <span>Wi-Fi Hunter</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton
+                        onClick={() => handleQuickAction("Data Breach Check")}
+                        tooltip={{children: "Data Breach Check", side: "right", align:"center"}}
+                        >
+                        <ShieldCheck />
+                        <span>Data Breach Check</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
@@ -203,6 +217,10 @@ const Sidebar: FC<SidebarProps> = () => {
         onAnalysisComplete={() => {
             // This is now handled inside the chat interface
         }}
+      />
+       <DataBreachCheckDialog
+        isOpen={isDataBreachCheckOpen}
+        onOpenChange={setIsDataBreachCheckOpen}
       />
     </>
   );

@@ -10,6 +10,7 @@ import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput }
 import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
 import { z } from 'zod';
+import { checkDataBreach as checkDataBreachFlow, type CheckDataBreachOutput } from '@/ai/flows/check-data-breach-flow';
 
 const chatInputSchema = z.object({
   message: z.string().max(2000, "Message too long."),
@@ -156,3 +157,22 @@ export async function handleScreenshotAnalysis(
     console.error("Error calling analyzeScreenshot flow:", error);
     return { success: false, error: "Sorry, I encountered an issue analyzing the screenshot. Please try again." };
   }
+}
+
+
+const emailSchema = z.string().email();
+
+export async function checkDataBreach(email: string): Promise<{ success: true, data: CheckDataBreachOutput } | { success: false, error: string }> {
+    const parsedEmail = emailSchema.safeParse(email);
+    if(!parsedEmail.success) {
+        return { success: false, error: "Invalid email address provided." };
+    }
+
+    try {
+        const result = await checkDataBreachFlow({ email: parsedEmail.data });
+        return { success: true, data: result };
+    } catch (error) {
+        console.error("Error calling checkDataBreach flow: ", error);
+        return { success: false, error: "Sorry, an unexpected error occurred while checking for breaches." };
+    }
+}
