@@ -1,18 +1,25 @@
+
 import type { FC } from 'react';
+import Image from 'next/image';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
-import { BotMessageSquare, UserCircle2, Terminal, ShieldQuestion } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { BotMessageSquare, UserCircle2, Terminal, ShieldQuestion, AlertTriangle, CheckCircle, Info, ListChecks, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AssessThreatOutput } from '@/ai/flows/assess-threat';
+import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 import ThreatLevelIndicator from './ThreatLevelIndicator';
 import ActionStepsList from './ActionStepsList';
 import LoadingDots from './LoadingDots';
+import { Badge } from '../ui/badge';
+
 
 export interface Message {
   id: string;
   sender: 'user' | 'ai' | 'system';
   text: string;
+  image?: string;
   threatAssessment?: AssessThreatOutput;
+  screenshotAnalysis?: AnalyzeScreenshotOutput;
   isLoading?: boolean;
 }
 
@@ -94,6 +101,18 @@ const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
   }
   
   const parsedContent = parseMessageText(message.text);
+  
+  const getRiskLevelVariant = (level: number) => {
+    if (level > 7) return 'destructive';
+    if (level > 4) return 'secondary';
+    return 'default';
+  };
+  
+  const getRiskLevelIcon = (level: number) => {
+     if (level > 7) return <AlertTriangle className="h-4 w-4 mr-1.5" />;
+     if (level > 4) return <Info className="h-4 w-4 mr-1.5" />;
+     return <CheckCircle className="h-4 w-4 mr-1.5" />;
+  };
 
   return (
     <div className={cn('flex items-start gap-3 my-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -113,6 +132,11 @@ const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
             <LoadingDots />
           ) : (
             <>
+              {isUser && message.image && (
+                 <div className="mb-2">
+                    <Image src={message.image} alt="User upload" width={200} height={200} className="rounded-md object-contain" />
+                 </div>
+              )}
               <div className="whitespace-pre-wrap">
                 {parsedContent.map((block, index) => {
                   if (block.type === 'text') {
@@ -152,6 +176,37 @@ const ChatMessageItem: FC<ChatMessageItemProps> = ({ message }) => {
                      </div>
                   )}
                   <ActionStepsList steps={message.threatAssessment.actionSteps} />
+                </div>
+              )}
+               {isAI && message.screenshotAnalysis && (
+                <div className="mt-3 border-t border-border/70 pt-3 space-y-3">
+                    <Card>
+                        <CardHeader className="p-3">
+                            <CardTitle className="text-sm flex items-center justify-between">
+                                Screenshot Analysis
+                                <Badge variant={getRiskLevelVariant(message.screenshotAnalysis.riskScore)} className="text-xs px-2 py-0.5 capitalize">
+                                  {getRiskLevelIcon(message.screenshotAnalysis.riskScore)}
+                                  Risk: {message.screenshotAnalysis.riskScore}/10
+                                </Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0 text-xs text-muted-foreground">
+                           {message.screenshotAnalysis.summary}
+                        </CardContent>
+                    </Card>
+
+                   {message.screenshotAnalysis.redFlags && message.screenshotAnalysis.redFlags.length > 0 && (
+                        <div>
+                            <h4 className="font-semibold text-xs mb-1.5 flex items-center gap-1.5 text-destructive">
+                                <AlertTriangle className="h-4 w-4" /> Red Flags Identified
+                            </h4>
+                            <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
+                                {message.screenshotAnalysis.redFlags.map((flag, index) => (
+                                    <li key={index} className="break-words">{flag}</li>
+                                ))}
+                            </ul>
+                        </div>
+                   )}
                 </div>
               )}
             </>
