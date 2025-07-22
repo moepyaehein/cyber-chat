@@ -2,8 +2,9 @@
 "use client";
 
 import type { FC } from 'react';
+import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { KnowledgeArticle } from '@/lib/knowledge-base';
 import { BookOpen, Tag } from 'lucide-react';
@@ -18,26 +19,41 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface ArticleListProps {
   articles: KnowledgeArticle[];
 }
 
 const ArticleList: FC<ArticleListProps> = ({ articles }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {articles.map((article) => (
       <Dialog key={article.slug}>
         <DialogTrigger asChild>
-          <Card className="flex flex-col h-full hover:border-primary/80 transition-all cursor-pointer shadow-md hover:shadow-lg">
+          <Card className="flex flex-col h-full overflow-hidden group hover:border-primary/80 transition-all cursor-pointer shadow-md hover:shadow-primary/20 hover:shadow-lg">
+            <div className="relative aspect-video overflow-hidden">
+                <Image 
+                    src={article.image.url} 
+                    alt={article.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    data-ai-hint={article.image.hint}
+                />
+            </div>
             <CardHeader>
               <CardTitle className="text-lg leading-tight">{article.title}</CardTitle>
-              <CardDescription className="pt-2">{article.summary}</CardDescription>
+              <CardDescription className="pt-2 line-clamp-3">{article.summary}</CardDescription>
             </CardHeader>
             <CardFooter className="mt-auto flex justify-between items-center text-xs">
-              <Badge variant="outline" className="capitalize">
+              <Badge variant="outline" className={cn(
+                article.difficulty === 'Beginner' && 'border-green-500/50 text-green-600',
+                article.difficulty === 'Intermediate' && 'border-yellow-500/50 text-yellow-600',
+                article.difficulty === 'Advanced' && 'border-red-500/50 text-red-600',
+                'capitalize'
+                )}>
                 {article.difficulty}
               </Badge>
-              <span className="flex items-center gap-1.5 text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-muted-foreground group-hover:text-primary transition-colors">
                 <BookOpen className="h-3.5 w-3.5" /> Read More
               </span>
             </CardFooter>

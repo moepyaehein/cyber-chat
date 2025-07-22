@@ -8,6 +8,10 @@ export interface KnowledgeArticle {
   difficulty: Difficulty;
   content: string; // Full markdown/text content
   tags: string[];
+  image: {
+    url: string;
+    hint: string;
+  };
 }
 
 export const knowledgeBase: KnowledgeArticle[] = [
@@ -18,6 +22,10 @@ export const knowledgeBase: KnowledgeArticle[] = [
     summary: "Learn to identify and protect yourself from phishing scams, one of the most common online threats.",
     difficulty: "Beginner",
     tags: ["phishing", "email security", "scams"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "hooded hacker"
+    },
     content: `
 Phishing is a type of cyber attack where attackers impersonate legitimate organizations via email, text message, or other means to steal sensitive information. This can include login credentials, credit card numbers, or other personal details.
 
@@ -39,6 +47,10 @@ Phishing is a type of cyber attack where attackers impersonate legitimate organi
     summary: "Your password is your first line of defense. Discover the keys to creating passwords that are tough to crack.",
     difficulty: "Beginner",
     tags: ["passwords", "account security"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "digital padlock"
+    },
     content: `
 A strong password is a critical component of your online security.
 
@@ -56,6 +68,10 @@ A strong password is a critical component of your online security.
     summary: "Add a powerful extra layer of security to your accounts by enabling Two-Factor Authentication.",
     difficulty: "Beginner",
     tags: ["2fa", "mfa", "account security"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "phone security"
+    },
     content: `
 Two-Factor Authentication (2FA) adds a second step to your login process, making it much harder for an attacker to gain access to your accounts even if they have your password.
 
@@ -76,6 +92,10 @@ If a hacker steals your password, they still won't be able to log in without acc
     summary: "Explore the different types of malicious software and learn how they can infect your devices.",
     difficulty: "Intermediate",
     tags: ["malware", "viruses", "ransomware", "spyware"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "computer virus"
+    },
     content: `
 Malware, short for malicious software, is any software intentionally designed to cause damage to a computer, server, client, or computer network.
 
@@ -98,6 +118,10 @@ Malware, short for malicious software, is any software intentionally designed to
     summary: "Go beyond the basics with these essential habits to protect your privacy and security while browsing the web.",
     difficulty: "Intermediate",
     tags: ["browsing", "privacy", "https-everywhere"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "secure browsing"
+    },
     content: `
 Staying safe online involves developing good habits.
 
@@ -115,6 +139,10 @@ Staying safe online involves developing good habits.
     summary: "Dive into the concepts of symmetric and asymmetric encryption and understand how it protects your data.",
     difficulty: "Advanced",
     tags: ["encryption", "cryptography", "data security"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "digital encryption"
+    },
     content: `
 Encryption is the process of converting data into a code to prevent unauthorized access.
 
@@ -131,6 +159,10 @@ This public-private key pair is the foundation of modern secure communication, i
     summary: "Learn about a sophisticated threat where attackers compromise software dependencies to infect downstream users.",
     difficulty: "Advanced",
     tags: ["supply-chain", "software security", "vulnerabilities"],
+    image: {
+      url: "https://placehold.co/600x400.png",
+      hint: "supply chain"
+    },
     content: `
 A software supply chain attack occurs when an attacker infiltrates a legitimate software development process to inject malicious code. Instead of attacking the end-user directly, they target the third-party vendors, libraries, and dependencies that users trust.
 
