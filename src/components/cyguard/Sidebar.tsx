@@ -27,7 +27,6 @@ import WifiHunterDialog from "./WifiHunterDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
-import { ScanSearch } from "lucide-react";
 
 interface SidebarProps {}
 
@@ -111,15 +110,6 @@ const Sidebar: FC<SidebarProps> = () => {
                 
                 <SidebarGroup>
                     <SidebarGroupLabel>Tools</SidebarGroupLabel>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Analyze Screenshot")}
-                        tooltip={{children: "Analyze Screenshot", side: "right", align:"center"}}
-                        >
-                        <ScanSearch />
-                        <span>Analyze Screenshot</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton
                         onClick={() => handleQuickAction("Report Phishing")}
@@ -211,6 +201,9 @@ const Sidebar: FC<SidebarProps> = () => {
       <AnalyzeScreenshotDialog
         isOpen={isAnalyzeScreenshotOpen}
         onOpenChange={setIsAnalyzeScreenshotOpen}
+        onAnalysisComplete={() => {
+            // This is now handled inside the chat interface
+        }}
       />
     </>
   );

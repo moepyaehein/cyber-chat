@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessageItem';
 import { handleUserMessage } from '@/app/actions';
-import { SendHorizontal, Trash2 } from 'lucide-react';
+import { SendHorizontal, Trash2, Paperclip } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 import type { ClientMessage } from '@/app/actions';
@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import AnalyzeScreenshotDialog from './AnalyzeScreenshotDialog';
-import { ScanSearch } from 'lucide-react';
+import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 
 const chatFormSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty.').max(2000, 'Message is too long'),
@@ -97,6 +97,24 @@ const ChatInterface: FC = () => {
     setMessages([initialMessage]);
     toast({ title: "Chat Cleared", description: "Your conversation has been cleared from this browser." });
   };
+  
+  const handleScreenshotAnalysisComplete = (analysis: AnalyzeScreenshotOutput, imagePreview: string) => {
+    const userMessage: ClientMessage = {
+      id: uuidv4(),
+      sender: 'user',
+      text: "Here is the screenshot I uploaded:",
+      image: imagePreview,
+    };
+    
+    const aiMessage: ClientMessage = {
+      id: uuidv4(),
+      sender: 'ai',
+      text: '', // The component will render the analysis card
+      screenshotAnalysis: analysis,
+    };
+
+    setMessages(prev => [...prev, userMessage, aiMessage]);
+  };
 
   const onSubmit: SubmitHandler<ChatFormValues> = async (data) => {
     const userMessageId = uuidv4();
@@ -146,10 +164,6 @@ const ChatInterface: FC = () => {
         <div className="flex-shrink-0 flex items-center justify-between p-3 border-b gap-2">
             <h2 className="text-lg font-semibold truncate pr-4">CyGuard Chat</h2>
             <div className='flex items-center gap-2'>
-              <Button variant="outline" size="sm" onClick={() => setScreenshotDialogOpen(true)}>
-                <ScanSearch className="h-4 w-4 mr-2"/>
-                Analyze Screenshot
-              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={messages.length <= 1}>
@@ -183,6 +197,16 @@ const ChatInterface: FC = () => {
       </ScrollArea>
       <div className="border-t border-border p-3 md:p-4 bg-card/50 backdrop-blur-sm shadow- ऊपर">
         <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2 md:gap-3">
+           <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="shrink-0"
+                onClick={() => setScreenshotDialogOpen(true)}
+                aria-label="Analyze screenshot"
+            >
+                <Paperclip className="h-5 w-5" />
+            </Button>
           <Input
             {...register('message')}
             placeholder="Paste text or a suspicious link..."
@@ -196,7 +220,11 @@ const ChatInterface: FC = () => {
         </form>
       </div>
     </div>
-    <AnalyzeScreenshotDialog isOpen={isScreenshotDialogOpen} onOpenChange={setScreenshotDialogOpen} />
+    <AnalyzeScreenshotDialog 
+        isOpen={isScreenshotDialogOpen} 
+        onOpenChange={setScreenshotDialogOpen}
+        onAnalysisComplete={handleScreenshotAnalysisComplete}
+    />
     </>
   );
 };
