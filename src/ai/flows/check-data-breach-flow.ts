@@ -5,35 +5,10 @@
  * THIS IS A MOCK IMPLEMENTATION FOR PROTOTYPING.
  *
  * - checkDataBreach - A function that checks a given email against a mock database.
- * - CheckDataBreachInput - The input type for the checkDataBreach function.
- * - CheckDataBreachOutput - The return type for the checkDataBreach function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-// Define the schema for a single breach detail
-const BreachDetailSchema = z.object({
-  name: z.string().describe("The name of the breached service or website."),
-  date: z.string().describe("The date the breach occurred (YYYY-MM-DD)."),
-  description: z.string().describe("A summary of the breach and the data that was exposed."),
-  dataClasses: z.array(z.string()).describe("A list of data types that were compromised (e.g., 'Email addresses', 'Passwords', 'Usernames')."),
-});
-export type BreachDetail = z.infer<typeof BreachDetailSchema>;
-
-// Define the input schema for the flow
-export const CheckDataBreachInputSchema = z.object({
-  email: z.string().email().describe('The email address to check for breaches.'),
-});
-export type CheckDataBreachInput = z.infer<typeof CheckDataBreachInputSchema>;
-
-// Define the output schema for the flow
-export const CheckDataBreachOutputSchema = z.object({
-  found: z.boolean().describe("Whether the email was found in the database."),
-  breaches: z.array(BreachDetailSchema).describe('A list of breach details associated with the email. Empty if no breaches were found.'),
-  message: z.string().describe("A summary message for the user."),
-});
-export type CheckDataBreachOutput = z.infer<typeof CheckDataBreachOutputSchema>;
+import { type CheckDataBreachInput, CheckDataBreachInputSchema, type CheckDataBreachOutput, CheckDataBreachOutputSchema, type BreachDetail } from '@/ai/schemas/data-breach-schemas';
 
 export async function checkDataBreach(input: CheckDataBreachInput): Promise<CheckDataBreachOutput> {
   return checkDataBreachFlow(input);

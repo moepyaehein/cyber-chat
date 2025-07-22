@@ -10,7 +10,8 @@ import { AnalyzeWifiInputSchema, type WifiNetworkInput, type AnalyzeWifiOutput }
 import type { AnalyzeScreenshotOutput } from '@/ai/schemas/screenshot-analysis-schemas';
 import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-schemas';
 import { z } from 'zod';
-import { checkDataBreach as checkDataBreachFlow, type CheckDataBreachOutput } from '@/ai/flows/check-data-breach-flow';
+import { checkDataBreach as checkDataBreachFlow } from '@/ai/flows/check-data-breach-flow';
+import type { CheckDataBreachOutput } from '@/ai/schemas/data-breach-schemas';
 
 const chatInputSchema = z.object({
   message: z.string().max(2000, "Message too long."),

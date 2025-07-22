@@ -25,7 +25,7 @@ import { AlertTriangle, ShieldCheck, ShieldAlert, BadgeCheck } from "lucide-reac
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { BreachDetail, CheckDataBreachOutput } from "@/ai/flows/check-data-breach-flow";
+import type { CheckDataBreachOutput } from "@/ai/schemas/data-breach-schemas";
 import { checkDataBreach } from "@/app/actions";
 import LoadingDots from "./LoadingDots";
 
