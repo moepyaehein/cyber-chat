@@ -24,7 +24,7 @@ import LoadingDots from './LoadingDots';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, ShieldCheck, ShieldHalf, Calendar, KeyRound, User, Mail, Phone, List, ShieldQuestion } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const breachCheckSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -85,16 +85,17 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
   };
 
   const renderResultCard = (result: DataBreachCheckOutput) => {
-    if (!result.emailExists) {
+    if (!result.emailExists) { // This now checks for API error or invalid key
         return (
              <Card className="border-yellow-500/50">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <ShieldQuestion className="h-6 w-6 text-yellow-500" /> Email Not in Database
+                        <ShieldQuestion className="h-6 w-6 text-yellow-500" /> Could Not Complete Check
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+                    <p className="text-xs text-muted-foreground mt-2">Please ensure you have set a valid `HIBP_API_KEY` in your environment variables.</p>
                 </CardContent>
             </Card>
         )
@@ -142,7 +143,7 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
                 Data Breach Check
               </DialogTitle>
               <DialogDescription>
-                Enter an email address to see if it has appeared in any known (mocked) data breaches.
+                Enter an email address to check it against the &quot;Have I Been Pwned?&quot; database of known breaches.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -193,7 +194,7 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
                 Breach Report for <span className="font-mono text-primary/90">{form.getValues('email')}</span>
               </DialogTitle>
               <DialogDescription>
-                Review the findings from our (mocked) data breach database below.
+                Review the findings from the &quot;Have I Been Pwned?&quot; database below.
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-hidden">
@@ -211,7 +212,7 @@ const DataBreachCheckDialog: FC<DataBreachCheckDialogProps> = ({ isOpen, onOpenC
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            <p className="text-sm text-muted-foreground">{breach.summary}</p>
+                            <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: breach.summary }} />
                             <div>
                                 <h4 className="font-semibold flex items-center gap-1.5"><List className="h-4 w-4" /> Compromised Data:</h4>
                                 <div className="flex flex-wrap gap-2 mt-2">
