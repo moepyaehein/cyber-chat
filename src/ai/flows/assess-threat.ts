@@ -10,10 +10,8 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z, Document, inMemoryRetriever} from 'genkit';
 import {knowledgeBase} from '@/lib/knowledge-base';
-import {Document} from 'genkit/document';
-import {inMemoryRetriever} from 'genkit/retriever';
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),

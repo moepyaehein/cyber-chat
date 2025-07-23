@@ -23,7 +23,7 @@ export const knowledgeBase: KnowledgeArticle[] = [
     difficulty: "Beginner",
     tags: ["phishing", "email security", "scams"],
     image: {
-      url: "https://placehold.co/600x400?text=Phishing+Placeholder",
+      url: "https://placehold.co/600x400",
       hint: "hooded hacker"
     },
     content: `
@@ -48,7 +48,7 @@ Phishing is a type of cyber attack where attackers impersonate legitimate organi
     difficulty: "Beginner",
     tags: ["passwords", "account security"],
     image: {
-      url: "https://placehold.co/600x400?text=Passwords+Placeholder",
+      url: "https://placehold.co/600x400",
       hint: "digital padlock"
     },
     content: `
@@ -69,7 +69,7 @@ A strong password is a critical component of your online security.
     difficulty: "Beginner",
     tags: ["2fa", "mfa", "account security"],
     image: {
-      url: "https://placehold.co/600x400?text=2FA+Placeholder",
+      url: "https://placehold.co/600x400",
       hint: "phone security"
     },
     content: `
@@ -85,6 +85,27 @@ After entering your password, you'll be asked for a second piece of information,
 If a hacker steals your password, they still won't be able to log in without access to your second factor. You should enable 2FA on all important accounts that support it, especially email, banking, and social media.
 `
   },
+  {
+    slug: "recognizing-scam-websites",
+    title: "How to Spot a Fake or Scam Website",
+    summary: "Learn the tell-tale signs of a fraudulent website before you enter any personal information.",
+    difficulty: "Beginner",
+    tags: ["scams", "phishing", "browsing safety"],
+    image: {
+      url: "https://placehold.co/600x400",
+      hint: "website warning"
+    },
+    content: `
+Scam websites are designed to trick you into giving away money or personal information. Here are some red flags to watch out for.
+
+**Key Signs of a Scam Website:**
+- **Check the URL:** Look for misspellings of popular brands (e.g., "amaz0n.com") or unusual domain extensions (.biz, .info).
+- **Look for HTTPS:** A legitimate site, especially one that handles transactions, should have a padlock icon in the address bar, indicating a secure (HTTPS) connection. While not a guarantee of legitimacy, its absence is a major red flag.
+- **Poor Design and Grammar:** Many scam sites are put together hastily. Look for spelling mistakes, grammatical errors, and low-quality images.
+- **Unbelievable Deals:** If an offer seems too good to be true, it probably is.
+- **Lack of Contact Information:** A real business should provide a physical address, phone number, and legitimate contact email.
+`
+  },
   // Intermediate Articles
   {
     slug: "what-is-malware",
@@ -93,7 +114,7 @@ If a hacker steals your password, they still won't be able to log in without acc
     difficulty: "Intermediate",
     tags: ["malware", "viruses", "ransomware", "spyware"],
     image: {
-      url: "https://images.unsplash.com/photo-1547658719-da2b51169166?q=80&w=600&h=400&auto=format&fit=crop",
+      url: "https://placehold.co/600x400",
       hint: "computer virus"
     },
     content: `
@@ -119,7 +140,7 @@ Malware, short for malicious software, is any software intentionally designed to
     difficulty: "Intermediate",
     tags: ["browsing", "privacy", "https-everywhere"],
     image: {
-      url: "https://placehold.co/600x400?text=Browsing+Placeholder",
+      url: "https://placehold.co/600x400",
       hint: "secure browsing"
     },
     content: `
@@ -132,6 +153,30 @@ Staying safe online involves developing good habits.
 - **Think Before You Click:** Be skeptical of pop-ups, online quizzes, and "special offers" that seem too good to be true.
 `
   },
+  {
+    slug: "what-is-a-vpn",
+    title: "What is a VPN and Why Should You Use One?",
+    summary: "Understand how a Virtual Private Network (VPN) works and how it can protect your online privacy.",
+    difficulty: "Intermediate",
+    tags: ["vpn", "privacy", "encryption", "networking"],
+    image: {
+      url: "https://placehold.co/600x400",
+      hint: "network security"
+    },
+    content: `
+A Virtual Private Network (VPN) is a service that protects your internet connection and privacy online. It creates an encrypted tunnel for your data, protects your online identity by hiding your IP address, and allows you to use public Wi-Fi hotspots safely.
+
+**How a VPN Works:**
+When you connect to the internet through a VPN, your device connects to a server operated by the VPN provider. All your internet traffic is routed through this server and encrypted.
+1.  **Hides Your IP Address:** Your real IP address is replaced with the IP address of the VPN server, making it difficult for websites and online services to track your location and browsing habits.
+2.  **Encrypts Your Traffic:** The encryption scrambles your data, making it unreadable to anyone who might intercept it, such as your Internet Service Provider (ISP) or attackers on a public Wi-Fi network.
+
+**Why Use a VPN?**
+- **Enhanced Privacy:** Prevents your ISP from seeing your browsing activity.
+- **Security on Public Wi-Fi:** Protects your data from hackers when you're using coffee shop, airport, or hotel Wi-Fi.
+- **Access Geo-Restricted Content:** Can make it appear as if you are browsing from a different country.
+`
+  },
   // Advanced Articles
   {
     slug: "understanding-encryption",
@@ -140,7 +185,7 @@ Staying safe online involves developing good habits.
     difficulty: "Advanced",
     tags: ["encryption", "cryptography", "data security"],
     image: {
-      url: "https://images.unsplash.com/photo-1633265486064-086b219458ec?q=80&w=600&h=400&auto=format&fit=crop",
+      url: "https://placehold.co/600x400",
       hint: "digital encryption"
     },
     content: `
@@ -160,7 +205,7 @@ This public-private key pair is the foundation of modern secure communication, i
     difficulty: "Advanced",
     tags: ["supply-chain", "software security", "vulnerabilities"],
     image: {
-      url: "https://placehold.co/600x400?text=Supply+Chain+Placeholder",
+      url: "https://placehold.co/600x400",
       hint: "supply chain"
     },
     content: `
@@ -176,6 +221,34 @@ An attacker might:
 - Use dependency scanning tools to check for known vulnerabilities.
 - Pin dependency versions to prevent unexpected updates.
 - Vet third-party vendors and their security practices.
+`
+  },
+  {
+    slug: "sql-injection-explained",
+    title: "Understanding SQL Injection (SQLi) Attacks",
+    summary: "A technical overview of how SQL injection attacks work and why they are a critical threat to web applications.",
+    difficulty: "Advanced",
+    tags: ["sql", "injection", "web security", "database"],
+    image: {
+      url: "https://placehold.co/600x400",
+      hint: "database attack"
+    },
+    content: `
+SQL Injection (SQLi) is a web security vulnerability that allows an attacker to interfere with the queries that an application makes to its database. It generally allows an attacker to view data that they are not normally able to retrieve. This might include data belonging to other users, or any other data that the application itself is able to access.
+
+**How it Works:**
+Web applications often take user input (e.g., from a login form or a search bar) and insert it into a SQL query. An SQLi attack occurs when an attacker provides specially crafted input that changes the structure of the query itself.
+
+For example, a query might be:
+\`SELECT * FROM users WHERE username = '[userInput]';\`
+
+An attacker could enter \`' OR '1'='1\` as the userInput. The resulting query becomes:
+\`SELECT * FROM users WHERE username = '' OR '1'='1';\`
+
+Since \`'1'='1'\` is always true, this could return all rows from the \`users\` table, bypassing authentication.
+
+**Prevention:**
+The most effective way to prevent SQLi is to use **prepared statements** (with parameterized queries). These separate the query structure from the user-supplied data, ensuring that input cannot alter the query's intent. Input validation and sanitization are also important layers of defense.
 `
   }
 ];
