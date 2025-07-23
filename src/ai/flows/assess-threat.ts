@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -40,22 +41,25 @@ export async function assessThreat(input: AssessThreatInput): Promise<AssessThre
   return assessThreatFlow(input);
 }
 
-const kbRetriever = inMemoryRetriever({
-  embedder: 'googleai/text-embedding-004',
-  documents: knowledgeBase.map(article => {
-    return Document.fromText(article.content, {
-      title: article.title,
-      difficulty: article.difficulty,
-      slug: article.slug,
-      tags: article.tags.join(', '),
-    });
-  }),
-});
 
 const prompt = ai.definePrompt({
   name: 'assessThreatPrompt',
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
+  
+  // Configure the retriever directly within the prompt
+  retriever: inMemoryRetriever({
+    embedder: 'googleai/text-embedding-004',
+    documents: knowledgeBase.map(article => {
+      return Document.fromText(article.content, {
+        title: article.title,
+        difficulty: article.difficulty,
+        slug: article.slug,
+        tags: article.tags.join(', '),
+      });
+    }),
+  }),
+  
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
 You must be friendly, clear, and professional. Your tone should be reassuring but firm on security and privacy matters.
@@ -66,7 +70,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 3.  **Privacy First:**
     *   **Never** ask the user for personally identifiable information (PII) like passwords, real names, addresses, or credit card numbers.
     *   **Always** include a privacy assessment. Briefly explain any privacy risks related to their query (e.g., "The link you provided seems to be a phishing attempt designed to steal login credentials.") and gently remind them to avoid sharing sensitive information online.
-    *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in messages like this. Here's my assessment..."
+    *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in this. Here's my assessment..."
 4.  **Be Conversational:** Engage in a natural way. Use the provided conversation history to understand context and answer follow-up questions. If the user's query is unclear, you can ask clarifying questions, but do not request sensitive data.
 5.  **Use Knowledge Base:** If there is relevant information in the provided knowledge base context, use it to form your answer. If the context answers the user's question, prioritize that information.
 
@@ -100,10 +104,8 @@ const assessThreatFlow = ai.defineFlow(
     outputSchema: AssessThreatOutputSchema,
   },
   async (input, streamingCallback) => {
-    
-    const context = await kbRetriever.retrieve(input.user_input, 3);
-    
-    const {output} = await prompt({...input, context});
+    // The retriever is now part of the prompt, so we don't need to call it separately.
+    const {output} = await prompt(input);
     return output!;
   }
 );
