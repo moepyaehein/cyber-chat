@@ -8,3 +8,4 @@ import '@/ai/flows/analyze-security-log-flow.ts';
 import '@/ai/flows/fetch-threat-intel-flow.ts';
 import '@/ai/flows/analyze-wifi-flow.ts';
 import '@/ai/flows/analyze-screenshot-flow.ts';
+import '@/ai/flows/index-knowledge-base.ts';
