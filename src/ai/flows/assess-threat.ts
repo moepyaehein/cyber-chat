@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -10,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, Document, inMemoryRetriever} from 'genkit';
+import {z, Document} from 'genkit';
 import {knowledgeBase} from '@/lib/knowledge-base';
 
 const ChatMessageSchema = z.object({
@@ -41,7 +40,7 @@ export async function assessThreat(input: AssessThreatInput): Promise<AssessThre
   return assessThreatFlow(input);
 }
 
-const kbRetriever = inMemoryRetriever({
+const kbRetriever = ai.retriever.inMemory({
   embedder: 'googleai/text-embedding-004',
   documents: knowledgeBase.map(article => {
     return Document.fromText(article.content, {
