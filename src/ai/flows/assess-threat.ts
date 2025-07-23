@@ -11,6 +11,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {knowledgeBase} from '@/lib/knowledge-base';
+import {Document} from 'genkit/document';
+import {inMemoryRetriever} from 'genkit/retriever';
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -40,6 +43,18 @@ export async function assessThreat(input: AssessThreatInput): Promise<AssessThre
   return assessThreatFlow(input);
 }
 
+const kbRetriever = inMemoryRetriever({
+  embedder: 'googleai/text-embedding-004',
+  documents: knowledgeBase.map(article => {
+    return Document.fromText(article.content, {
+      title: article.title,
+      difficulty: article.difficulty,
+      slug: article.slug,
+      tags: article.tags.join(', '),
+    });
+  }),
+});
+
 const prompt = ai.definePrompt({
   name: 'assessThreatPrompt',
   input: {schema: AssessThreatInputSchema},
@@ -62,7 +77,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 Knowledge Base Context:
 This context is from our knowledge base and is highly relevant to the user's question. Use it as the primary source for your answer.
 {{#each CONTEXT}}
-- **{{document.metadata.title}}**: {{content}}
+- **{{document.metadata.title}}**: {{document.text()}}
 {{/each}}
 {{/if}}
 
@@ -88,7 +103,10 @@ const assessThreatFlow = ai.defineFlow(
     outputSchema: AssessThreatOutputSchema,
   },
   async (input, streamingCallback) => {
-    const {output} = await prompt(input);
+    
+    const context = await kbRetriever.retrieve(input.user_input, 3);
+    
+    const {output} = await prompt({...input, context});
     return output!;
   }
 );
