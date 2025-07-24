@@ -48,7 +48,8 @@ const prompt = ai.definePrompt({
   output: {schema: AssessThreatOutputSchema},
   
   // Configure the retriever directly within the prompt
-  retriever: inMemoryRetriever({
+  retriever: inMemoryRetriever,
+  retrieverOptions: {
     embedder: 'googleai/text-embedding-004',
     documents: knowledgeBase.map(article => {
       return Document.fromText(article.content, {
@@ -58,7 +59,7 @@ const prompt = ai.definePrompt({
         tags: article.tags.join(', '),
       });
     }),
-  }),
+  },
   
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
