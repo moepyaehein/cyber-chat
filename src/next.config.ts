@@ -3,9 +3,8 @@ import type { NextConfig } from 'next';
 
 const contentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline';
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  connect-src 'self' *.firebaseapp.com *.firebaseio.com *.googleapis.com wss://*.firebasedatabase.app;
   img-src 'self' https://placehold.co https://images.unsplash.com data:;
   font-src 'self' https://fonts.gstatic.com;
   object-src 'none';
@@ -69,7 +68,7 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: [
     'https://9084-firebase-studio-1749205711102.cluster-hf4yr35cmmbd4vhbxvfvc6cp5g.cloudworkstations.duev',
-    'https://6000-firebase-studio-1749205711102.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev'
+    // Add any other development URLs you need
   ],
 };
 

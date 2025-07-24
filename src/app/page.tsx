@@ -95,11 +95,6 @@ export default function LandingPage() {
       <footer className="py-6 border-t">
         <div className="container flex flex-col md:flex-row items-center justify-between text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} CyGuard. All rights reserved.</p>
-           <div className="flex items-center mt-4 md:mt-0">
-                <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
-                <span className="mx-2">|</span>
-                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
-            </div>
         </div>
       </footer>
     </div>
