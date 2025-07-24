@@ -42,26 +42,23 @@ export async function assessThreat(input: AssessThreatInput): Promise<AssessThre
   return assessThreatFlow(input);
 }
 
-// Define the in-memory retriever with the knowledge base content.
-const kbRetriever = inMemoryRetriever({
-  embedder: 'googleai/text-embedding-004',
-  documents: knowledgeBase.map(article => {
-    return Document.fromText(article.content, {
-      title: article.title,
-      difficulty: article.difficulty,
-      slug: article.slug,
-      tags: article.tags.join(', '),
-    });
-  }),
-});
-
 const prompt = ai.definePrompt({
   name: 'assessThreatPrompt',
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
   
   // Use the defined in-memory retriever
-  retriever: kbRetriever,
+  retriever: inMemoryRetriever({
+    embedder: 'googleai/text-embedding-004',
+    documents: knowledgeBase.map(article => {
+      return Document.fromText(article.content, {
+        title: article.title,
+        difficulty: article.difficulty,
+        slug: article.slug,
+        tags: article.tags.join(', '),
+      });
+    }),
+  }),
   
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
@@ -107,7 +104,6 @@ const assessThreatFlow = ai.defineFlow(
     outputSchema: AssessThreatOutputSchema,
   },
   async (input) => {
-    // The retriever is now part of the prompt, so we don't need to call it separately.
     const {output} = await prompt(input);
     return output!;
   }
