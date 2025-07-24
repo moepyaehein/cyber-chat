@@ -10,8 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, Document, inMemoryRetriever} from 'genkit';
-import {knowledgeBase} from '@/lib/knowledge-base';
+import {z} from 'genkit';
 
 
 const ChatMessageSchema = z.object({
@@ -47,19 +46,6 @@ const prompt = ai.definePrompt({
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
   
-  // Use the defined in-memory retriever
-  retriever: inMemoryRetriever({
-    embedder: 'googleai/text-embedding-004',
-    documents: knowledgeBase.map(article => {
-      return Document.fromText(article.content, {
-        title: article.title,
-        difficulty: article.difficulty,
-        slug: article.slug,
-        tags: article.tags.join(', '),
-      });
-    }),
-  }),
-  
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
 You must be friendly, clear, and professional. Your tone should be reassuring but firm on security and privacy matters.
@@ -72,15 +58,6 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
     *   **Always** include a privacy assessment. Briefly explain any privacy risks related to their query (e.g., "The link you provided seems to be a phishing attempt designed to steal login credentials.") and gently remind them to avoid sharing sensitive information online.
     *   If the user's input contains what looks like PII, your response should prioritize warning them about sharing it, e.g., "I've analyzed the content. Please be careful about sharing personal details in this. Here's my assessment..."
 4.  **Be Conversational:** Engage in a natural way. Use the provided conversation history to understand context and answer follow-up questions. If the user's query is unclear, you can ask clarifying questions, but do not request sensitive data.
-5.  **Use Knowledge Base:** If there is relevant information in the provided knowledge base context, use it to form your answer. If the context answers the user's question, prioritize that information.
-
-{{#if CONTEXT}}
-Knowledge Base Context:
-This context is from our knowledge base and is highly relevant to the user's question. Use it as the primary source for your answer.
-{{#each CONTEXT}}
-- **{{document.metadata.title}}**: {{document.text}}
-{{/each}}
-{{/if}}
 
 {{#if history}}
 Conversation History:
