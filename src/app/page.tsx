@@ -96,8 +96,9 @@ export default function LandingPage() {
         <div className="container flex flex-col md:flex-row items-center justify-between text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} CyGuard. All rights reserved.</p>
            <div className="flex items-center mt-4 md:mt-0">
-                <Button variant="link" size="sm" asChild><Link href="#">Terms of Service</Link></Button>
-                <Button variant="link" size="sm" asChild><Link href="#">Privacy Policy</Link></Button>
+                <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
+                <span className="mx-2">|</span>
+                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
             </div>
         </div>
       </footer>
