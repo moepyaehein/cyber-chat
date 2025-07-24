@@ -11,6 +11,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {knowledgeBase} from '@/lib/knowledge-base';
+import {Document, inMemoryRetriever} from 'genkit';
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -40,14 +42,26 @@ export async function assessThreat(input: AssessThreatInput): Promise<AssessThre
   return assessThreatFlow(input);
 }
 
+// Define the in-memory retriever with the knowledge base content.
+const kbRetriever = inMemoryRetriever({
+  embedder: 'googleai/text-embedding-004',
+  documents: knowledgeBase.map(article => {
+    return Document.fromText(article.content, {
+      title: article.title,
+      difficulty: article.difficulty,
+      slug: article.slug,
+      tags: article.tags.join(', '),
+    });
+  }),
+});
 
 const prompt = ai.definePrompt({
   name: 'assessThreatPrompt',
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
   
-  // Use the default retriever configured in genkit.ts
-  retriever: ai.retriever.default,
+  // Use the defined in-memory retriever
+  retriever: kbRetriever,
   
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
