@@ -10,9 +10,9 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z, Document, inMemoryRetriever} from 'genkit';
 import {knowledgeBase} from '@/lib/knowledge-base';
-import {Document, inMemoryRetriever} from 'genkit';
+
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -78,7 +78,7 @@ You must be friendly, clear, and professional. Your tone should be reassuring bu
 Knowledge Base Context:
 This context is from our knowledge base and is highly relevant to the user's question. Use it as the primary source for your answer.
 {{#each CONTEXT}}
-- **{{document.metadata.title}}**: {{document.text()}}
+- **{{document.metadata.title}}**: {{document.text}}
 {{/each}}
 {{/if}}
 
