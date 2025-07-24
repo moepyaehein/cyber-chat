@@ -10,6 +10,17 @@ import {ai} from '@/ai/genkit';
 import {knowledgeBase} from '@/lib/knowledge-base';
 import {Document} from 'genkit/document';
 import {z} from 'zod';
+import {inMemoryRetriever} from 'genkit/retriever';
+import {googleAI} from '@genkit-ai/googleai';
+
+// Configure the default retriever to be an in-memory one with our knowledge base.
+ai.configureRetriever({
+    plugin: inMemoryRetriever,
+    options: {
+        embedder: googleAI.embedder('text-embedding-004'),
+    }
+});
+
 
 const IndexKnowledgeBaseOutputSchema = z.object({
   indexedDocuments: z.number(),

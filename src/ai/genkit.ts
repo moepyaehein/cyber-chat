@@ -9,7 +9,6 @@ export const ai = genkit({
     googleAI(),
   ],
   model: 'googleai/gemini-2.0-flash',
-  embedder: 'googleai/text-embedding-004',
   logSinks: ['googleCloud'],
   enableTracing: true,
 });

@@ -10,8 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z, Document, inMemoryRetriever} from 'genkit';
-import {knowledgeBase} from '@/lib/knowledge-base';
+import {z} from 'genkit';
 
 const ChatMessageSchema = z.object({
   role: z.enum(['user', 'model']),
@@ -47,19 +46,8 @@ const prompt = ai.definePrompt({
   input: {schema: AssessThreatInputSchema},
   output: {schema: AssessThreatOutputSchema},
   
-  // Configure the retriever directly within the prompt
-  retriever: inMemoryRetriever,
-  retrieverOptions: {
-    embedder: 'googleai/text-embedding-004',
-    documents: knowledgeBase.map(article => {
-      return Document.fromText(article.content, {
-        title: article.title,
-        difficulty: article.difficulty,
-        slug: article.slug,
-        tags: article.tags.join(', '),
-      });
-    }),
-  },
+  // Use the default retriever configured in genkit.ts
+  retriever: ai.retriever.default,
   
   prompt: `You are CyGuard, a smart and interactive cybersecurity and privacy assistant. Your primary function is to help users identify and understand online threats while upholding the highest standards of user privacy.
 
@@ -104,7 +92,7 @@ const assessThreatFlow = ai.defineFlow(
     inputSchema: AssessThreatInputSchema,
     outputSchema: AssessThreatOutputSchema,
   },
-  async (input, streamingCallback) => {
+  async (input) => {
     // The retriever is now part of the prompt, so we don't need to call it separately.
     const {output} = await prompt(input);
     return output!;
