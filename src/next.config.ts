@@ -3,8 +3,9 @@ import type { NextConfig } from 'next';
 
 const contentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.gstatic.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  connect-src 'self' *.firebaseapp.com *.firebaseio.com *.googleapis.com wss://*.firebasedatabase.app;
   img-src 'self' https://placehold.co https://images.unsplash.com data:;
   font-src 'self' https://fonts.gstatic.com;
   object-src 'none';
