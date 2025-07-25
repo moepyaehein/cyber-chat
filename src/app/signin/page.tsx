@@ -15,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import type { LoginFormData } from '@/app/(auth)/schemas';
 import { loginSchema } from '@/app/(auth)/schemas';
 import { Shield } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const SignInPage: FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<LoginFormData>({
@@ -42,6 +43,18 @@ const SignInPage: FC = () => {
     // On success, AuthContext handles redirect
   };
 
+  const handleGoogleSignIn = async () => {
+    const result = await signInWithGoogle();
+    if (!result.success && result.error) {
+      toast({
+        title: 'Google Sign-In Failed',
+        description: result.error,
+        variant: 'destructive',
+      });
+    }
+    // On success, AuthContext handles redirect
+  }
+
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="items-center text-center">
@@ -50,8 +63,19 @@ const SignInPage: FC = () => {
         <CardDescription>Sign in to access your cybersecurity assistant.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="space-y-4">
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 177.2 56.5L357 155.5C325.3 128.1 289.4 112 248 112c-73.3 0-133.4 59.9-133.4 134.4s60.1 134.4 133.4 134.4c76.1 0 112.4-50.7 116.8-76.3H248v-65.4h239.2c1.4 8.7 2.8 17.5 2.8 26.7z"></path></svg>
+            Sign In with Google
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
+        </div>
         <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
             <FormField
               control={form.control}
               name="email"
@@ -79,7 +103,7 @@ const SignInPage: FC = () => {
               )}
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Signing In...' : 'Sign In'}
+              {isSubmitting ? 'Signing In...' : 'Sign In with Email'}
             </Button>
           </form>
         </Form>
