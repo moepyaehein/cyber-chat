@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -15,13 +14,12 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 // 4. Copy the entire firebaseConfig object and paste it below.
 
 const firebaseConfig = {
-  // EXAMPLE:
-  // apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXX",
-  // authDomain: "your-project-id.firebaseapp.com",
-  // projectId: "your-project-id",
-  // storageBucket: "your-project-id.appspot.com",
-  // messagingSenderId: "1234567890",
-  // appId: "1:1234567890:web:XXXXXXXXXXXXXXXX"
+  apiKey: "AIzaSyAvFsbmSA2tePqrung4AApr39VMdyBtGAI",
+  authDomain: "cyguard-your-cyber-guardian.firebaseapp.com",
+  projectId: "cyguard-your-cyber-guardian",
+  storageBucket: "cyguard-your-cyber-guardian.firebasestorage.app",
+  messagingSenderId: "16367383299",
+  appId: "1:16367383299:web:d133cb2c9d8c3403b06f36"
 };
 
 
