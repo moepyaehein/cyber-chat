@@ -3,23 +3,27 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 // --- URGENT ACTION REQUIRED ---
-// PASTE YOUR FIREBASE CONFIGURATION HERE
-// This is not a best practice for production, but it is necessary to
-// bypass the Vercel environment variable issues you are facing.
+// PASTE YOUR **REAL** FIREBASE CONFIGURATION HERE.
+// Using the correct configuration is critical for features like email verification
+// to work properly and avoid spam folders.
 //
-// How to find this:
-// 1. Go to your Firebase project settings.
-// 2. Under the "General" tab, scroll down to "Your apps".
-// 3. Select the "Config" option for your web app.
-// 4. Copy the entire firebaseConfig object and paste it below.
+// How to find your config:
+// 1. Go to your Firebase project at console.firebase.google.com
+// 2. Click the gear icon (Project settings) in the top left.
+// 3. Under the "General" tab, scroll down to the "Your apps" section.
+// 4. If you don't have a web app, create one.
+// 5. For your web app, click on the "Config" option (or </> icon).
+// 6. Copy the entire firebaseConfig object and paste it below, replacing the placeholder.
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAvFsbmSA2tePqrung4AApr39VMdyBtGAI",
-  authDomain: "cyguard-your-cyber-guardian.firebaseapp.com",
-  projectId: "cyguard-your-cyber-guardian",
-  storageBucket: "cyguard-your-cyber-guardian.firebasestorage.app",
-  messagingSenderId: "16367383299",
-  appId: "1:16367383299:web:d133cb2c9d8c3403b06f36"
+  // === PASTE YOUR CONFIG OBJECT HERE ===
+  // It should look like this:
+  // apiKey: "AIza...",
+  // authDomain: "your-project-id.firebaseapp.com",
+  // projectId: "your-project-id",
+  // storageBucket: "your-project-id.appspot.com",
+  // messagingSenderId: "...",
+  // appId: "1:..."
 };
 
 
@@ -38,7 +42,7 @@ if (firebaseConfig.apiKey && getApps().length === 0) {
   firestore = getFirestore(app);
 } else {
     // Provide dummy objects if config is missing to avoid crashes
-    console.error("Firebase config is missing. Please update src/lib/firebase.ts");
+    console.error("Firebase config is missing. Please update src/lib/firebase.ts with your project's configuration.");
     app = {} as FirebaseApp;
     auth = {} as Auth;
     firestore = {} as Firestore;
