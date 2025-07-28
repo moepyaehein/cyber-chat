@@ -34,13 +34,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-if (firebaseConfig.apiKey && firebaseConfig.apiKey.includes('your-project-id')) {
-    console.error("Firebase config is using placeholder values. Please update src/lib/firebase.ts with your project's configuration.");
-    app = {} as FirebaseApp;
-    auth = {} as Auth;
-    firestore = {} as Firestore;
-
-} else if (getApps().length === 0) {
+if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   firestore = getFirestore(app);
