@@ -12,6 +12,10 @@ import { AnalyzeScreenshotInputSchema } from '@/ai/schemas/screenshot-analysis-s
 import { z } from 'zod';
 import { checkDataBreach as checkDataBreachFlow } from '@/ai/flows/check-data-breach-flow';
 import type { CheckDataBreachOutput } from '@/ai/schemas/data-breach-schemas';
+import { analyzePolicy } from '@/ai/flows/analyze-policy-flow';
+import type { AnalyzePolicyOutput } from '@/ai/schemas/policy-analysis-schemas';
+import { AnalyzePolicyInputSchema } from '@/ai/schemas/policy-analysis-schemas';
+
 
 const chatInputSchema = z.object({
   message: z.string().max(2000, "Message too long."),
@@ -176,4 +180,25 @@ export async function checkDataBreach(email: string): Promise<{ success: true, d
         console.error("Error calling checkDataBreach flow: ", error);
         return { success: false, error: "Sorry, an unexpected error occurred while checking for breaches." };
     }
+}
+
+
+export async function handlePolicyAnalysis(
+  policyText: string | undefined,
+  policyUrl: string | undefined,
+): Promise<{ success: true; analysis: AnalyzePolicyOutput } | { success: false; error: string }> {
+  
+  const parsedInput = AnalyzePolicyInputSchema.safeParse({ policyText, policyUrl });
+
+  if (!parsedInput.success) {
+    return { success: false, error: parsedInput.error.errors.map(e => e.message).join(', ') };
+  }
+
+  try {
+    const aiResponse = await analyzePolicy(parsedInput.data);
+    return { success: true, analysis: aiResponse };
+  } catch (error: any) {
+    console.error("Error calling analyzePolicy flow:", error);
+    return { success: false, error: error.message || "Sorry, I encountered an issue analyzing the policy. Please try again." };
+  }
 }

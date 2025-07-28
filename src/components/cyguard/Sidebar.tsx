@@ -17,7 +17,7 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf, ShieldCheck } from "lucide-react";
+import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf, ShieldCheck, FileText } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import ReportPhishingDialog from "./ReportPhishingDialog";
@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
 import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
 import DataBreachCheckDialog from "./DataBreachCheckDialog";
+import AnalyzePolicyDialog from "./AnalyzePolicyDialog";
 
 interface SidebarProps {}
 
@@ -41,6 +42,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
   const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
   const [isDataBreachCheckOpen, setIsDataBreachCheckOpen] = useState(false);
+  const [isAnalyzePolicyOpen, setIsAnalyzePolicyOpen] = useState(false);
 
   const handleQuickAction = (action: string) => {
     if (!user) {
@@ -59,6 +61,8 @@ const Sidebar: FC<SidebarProps> = () => {
       setIsAnalyzeScreenshotOpen(true);
     } else if (action === "Data Breach Check") {
         setIsDataBreachCheckOpen(true);
+    } else if (action === "Analyze Policy") {
+        setIsAnalyzePolicyOpen(true);
     }
      else {
       toast({
@@ -143,6 +147,15 @@ const Sidebar: FC<SidebarProps> = () => {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton
+                        onClick={() => handleQuickAction("Analyze Policy")}
+                        tooltip={{children: "Analyze Policy", side: "right", align:"center"}}
+                        >
+                        <FileText />
+                        <span>Analyze Policy</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
                         onClick={() => handleQuickAction("Scan Logs")}
                         tooltip={{children: "Scan Logs", side: "right", align:"center"}}
                         >
@@ -221,6 +234,10 @@ const Sidebar: FC<SidebarProps> = () => {
        <DataBreachCheckDialog
         isOpen={isDataBreachCheckOpen}
         onOpenChange={setIsDataBreachCheckOpen}
+      />
+      <AnalyzePolicyDialog
+        isOpen={isAnalyzePolicyOpen}
+        onOpenChange={setIsAnalyzePolicyOpen}
       />
     </>
   );
