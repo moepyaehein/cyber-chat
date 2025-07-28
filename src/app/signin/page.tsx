@@ -14,8 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import type { LoginFormData } from '@/app/(auth)/schemas';
 import { loginSchema } from '@/app/(auth)/schemas';
-import { Shield } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import CyGuardLogo from '@/components/cyguard/CyGuardLogo';
 
 const SignInPage: FC = () => {
   const { signIn, signInWithGoogle } = useAuth();
@@ -58,7 +58,7 @@ const SignInPage: FC = () => {
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="items-center text-center">
-        <Shield className="h-12 w-12 text-primary mb-2" />
+        <CyGuardLogo className="h-12 w-12 text-primary mb-2" />
         <CardTitle className="text-2xl">Welcome Back to CyGuard</CardTitle>
         <CardDescription>Sign in to access your cybersecurity assistant.</CardDescription>
       </CardHeader>

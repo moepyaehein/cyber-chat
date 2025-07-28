@@ -13,11 +13,12 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, LogOut, LogIn, GraduationCap, Home, Wrench } from "lucide-react";
+import { LogOut, LogIn, GraduationCap, Home, Wrench } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
+import CyGuardLogo from "./CyGuardLogo";
 
 
 interface SidebarProps {}
@@ -37,7 +38,7 @@ const Sidebar: FC<SidebarProps> = () => {
       <ShadSidebar collapsible="icon" variant="sidebar" side="left">
         <SidebarHeader className="items-center justify-center p-4">
             <Link href="/" className="flex items-center justify-center gap-2">
-                <Shield className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
+                <CyGuardLogo className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7" />
                 <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden">
                     CyGuard
                 </h1>

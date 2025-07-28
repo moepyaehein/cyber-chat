@@ -1,8 +1,9 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, BotMessageSquare, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, BotMessageSquare, Zap } from 'lucide-react';
 import Link from 'next/link';
+import CyGuardLogo from '@/components/cyguard/CyGuardLogo';
 
 export default function LandingPage() {
   return (
@@ -10,7 +11,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <Link href="/" className="flex items-center justify-start">
-            <ShieldCheck className="h-6 w-6 mr-2 text-primary" />
+            <CyGuardLogo className="h-6 w-6 mr-2 text-primary" />
             <span className="font-bold">CyGuard</span>
           </Link>
           <nav className="ml-auto flex items-center space-x-2">
@@ -64,7 +65,7 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-col items-center">
                 <div className="p-4 bg-primary/10 rounded-full mb-4">
-                  <ShieldCheck className="h-10 w-10 text-primary" />
+                  <CyGuardLogo className="h-10 w-10 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Privacy First</h3>
                 <p className="text-muted-foreground">
