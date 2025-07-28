@@ -124,7 +124,7 @@ const SignUpPage: FC = () => {
               )}
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating Account...' : 'Create Account with Email'}
+              {isSubmitting ? 'Creating Account...' : 'Create Account & Verify Email'}
             </Button>
           </form>
         </Form>

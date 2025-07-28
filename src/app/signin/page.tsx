@@ -40,7 +40,7 @@ const SignInPage: FC = () => {
         variant: 'destructive',
       });
     }
-    // On success, AuthContext handles redirect
+    // On success, AuthContext handles redirect IF email is verified
   };
 
   const handleGoogleSignIn = async () => {

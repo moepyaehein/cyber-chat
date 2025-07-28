@@ -48,7 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       // Send verification email
       await sendEmailVerification(userCredential.user);
-      // User will be set by onAuthStateChanged, and effect will redirect
+      // Log the user out immediately so they have to verify before logging in
+      await firebaseSignOut(auth);
       return { success: true };
     } catch (error) {
       const authError = error as AuthError;
@@ -58,11 +59,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (values: z.infer<typeof loginSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // User will be set by onAuthStateChanged, and effect will redirect
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+
+      if (!userCredential.user.emailVerified) {
+        // Log them out and tell them to verify
+        await firebaseSignOut(auth);
+        return { success: false, error: "Please verify your email before signing in. Check your inbox for a verification link." };
+      }
+
+      // On success, the onAuthStateChanged listener will handle the redirect.
       return { success: true };
     } catch (error) {
       const authError = error as AuthError;
+      // Handle cases like wrong password, user not found, etc.
       return { success: false, error: authError.message };
     }
   };
