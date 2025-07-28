@@ -16,16 +16,14 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, ShieldAlert, BadgeCheck, FileText, BadgeInfo, ChevronsRight, ShieldQuestion, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ShieldAlert, ThumbsUp, ThumbsDown, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AnalyzePolicyOutput } from "@/ai/schemas/policy-analysis-schemas";
 import { handlePolicyAnalysis } from "@/app/actions";
 import LoadingDots from "./LoadingDots";
@@ -33,9 +31,7 @@ import { Progress } from "../ui/progress";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
-  policyText: z.string().optional(),
-  policyUrl: z.string().optional(),
-  activeTab: z.enum(["paste", "url"]),
+  policyText: z.string().min(100, { message: 'Policy text must be at least 100 characters.' }),
 });
 
 type AnalyzePolicyFormValues = z.infer<typeof formSchema>;
@@ -54,15 +50,11 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   const form = useForm<AnalyzePolicyFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      policyUrl: '',
       policyText: '',
-      activeTab: 'paste',
     },
     mode: 'onChange',
   });
   
-  const { setValue, trigger, handleSubmit, formState: { errors } } = form;
-
   const resetDialogState = () => {
     form.reset();
     setAnalysisResult(null);
@@ -77,41 +69,11 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
     onOpenChange(open);
   };
 
-  const onTabChange = (value: "paste" | "url") => {
-    setValue('activeTab', value, { shouldValidate: false });
-    // Clear errors when switching tabs
-    form.clearErrors();
-  }
-
   const onSubmit: SubmitHandler<AnalyzePolicyFormValues> = async (data) => {
-    // Manual validation based on active tab
-    if (data.activeTab === 'paste') {
-        if (!data.policyText || data.policyText.length < 100) {
-            form.setError('policyText', { type: 'manual', message: 'Policy text must be at least 100 characters.' });
-            return;
-        }
-    } else if (data.activeTab === 'url') {
-        const urlCheck = z.string().url().safeParse(data.policyUrl);
-        if (!urlCheck.success) {
-            form.setError('policyUrl', { type: 'manual', message: 'Please enter a valid URL.' });
-            return;
-        }
-    }
-    
     setIsChecking(true);
     setAnalysisResult(null);
     
-    if(data.activeTab === "url" && data.policyUrl) {
-         toast({
-            title: 'Feature Not Implemented',
-            description: "Fetching from URL is for demonstration purposes. Please paste the policy text.",
-            variant: 'destructive',
-        });
-        setIsChecking(false);
-        return;
-    }
-
-    const result = await handlePolicyAnalysis(data.policyText, data.policyUrl);
+    const result = await handlePolicyAnalysis(data.policyText, undefined);
     setIsChecking(false);
 
     if (result.success) {
@@ -153,53 +115,25 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
                 Privacy Policy Analyzer
               </DialogTitle>
               <DialogDescription>
-                Paste policy text to get a simple breakdown of what it means for your privacy. URL analysis is not yet implemented.
+                Paste a privacy policy text below to get a simple breakdown of what it means for your privacy.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-                <Tabs 
-                    value={form.watch('activeTab')} 
-                    onValueChange={(value) => onTabChange(value as "paste" | "url")} 
-                    className="w-full"
-                >
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="paste">Paste Text</TabsTrigger>
-                        <TabsTrigger value="url">From URL</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="paste" className="mt-4">
-                        <FormField
-                            control={form.control}
-                            name="policyText"
-                            render={({ field }) => (
-                                <FormItem>
-                                <Label htmlFor="policy-text" className="sr-only">Policy Text</Label>
-                                <FormControl>
-                                    <Textarea id="policy-text" placeholder="Paste the full privacy policy text here..." {...field} className="min-h-64 max-h-[50vh]"/>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </TabsContent>
-                    <TabsContent value="url" className="mt-4">
-                        <FormField
-                            control={form.control}
-                            name="policyUrl"
-                            render={({ field }) => (
-                                <FormItem>
-                                <Label htmlFor="policy-url">Policy URL</Label>
-                                <FormControl>
-                                    <Input id="policy-url" placeholder="https://example.com/privacy" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <p className="text-xs text-amber-500 mt-2 p-2 bg-amber-500/10 rounded-md">Note: Fetching content from a URL is not implemented in this prototype. This tab is for demonstration purposes only. Please use the 'Paste Text' tab.</p>
-                    </TabsContent>
-                </Tabs>
-
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                <FormField
+                    control={form.control}
+                    name="policyText"
+                    render={({ field }) => (
+                        <FormItem>
+                        <Label htmlFor="policy-text" className="sr-only">Policy Text</Label>
+                        <FormControl>
+                            <Textarea id="policy-text" placeholder="Paste the full privacy policy text here..." {...field} className="min-h-64 max-h-[50vh]"/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="outline" disabled={isChecking}>Cancel</Button>

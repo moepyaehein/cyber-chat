@@ -10,9 +10,7 @@ const KeyFindingSchema = z.object({
 
 export const AnalyzePolicyInputSchema = z.object({
   policyUrl: z.string().url().optional().describe('The URL of the privacy policy to analyze.'),
-  policyText: z.string().min(100).optional().describe('The full text of the privacy policy to analyze.'),
-}).refine(data => data.policyUrl || data.policyText, {
-  message: "Either a URL or the policy text must be provided.",
+  policyText: z.string().min(100).describe('The full text of the privacy policy to analyze.'),
 });
 export type AnalyzePolicyInput = z.infer<typeof AnalyzePolicyInputSchema>;
 
