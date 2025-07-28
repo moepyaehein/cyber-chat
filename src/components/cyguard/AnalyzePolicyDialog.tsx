@@ -32,18 +32,33 @@ import LoadingDots from "./LoadingDots";
 import { Progress } from "../ui/progress";
 import { cn } from "@/lib/utils";
 
-
-const textSchema = z.object({
-  policyText: z.string().min(100, { message: "Policy text must be at least 100 characters." }),
-  policyUrl: z.string().optional(),
-});
-
-const urlSchema = z.object({
-  policyUrl: z.string().url({ message: "Please enter a valid URL." }),
+const formSchema = z.object({
   policyText: z.string().optional(),
+  policyUrl: z.string().optional(),
+  activeTab: z.enum(["paste", "url"]),
+}).superRefine((data, ctx) => {
+    if (data.activeTab === 'paste') {
+        if (!data.policyText || data.policyText.length < 100) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['policyText'],
+                message: `Policy text must be at least 100 characters.`,
+            });
+        }
+    }
+    if (data.activeTab === 'url') {
+        if (!data.policyUrl || !z.string().url().safeParse(data.policyUrl).success) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['policyUrl'],
+                message: `Please enter a valid URL.`,
+            });
+        }
+    }
 });
 
-type AnalyzePolicyFormValues = z.infer<typeof textSchema> | z.infer<typeof urlSchema>;
+
+type AnalyzePolicyFormValues = z.infer<typeof formSchema>;
 
 interface AnalyzePolicyDialogProps {
   isOpen: boolean;
@@ -55,13 +70,13 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   const [view, setView] = useState<'form' | 'result'>('form');
   const [analysisResult, setAnalysisResult] = useState<AnalyzePolicyOutput | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [activeTab, setActiveTab] = useState("paste");
-
+  
   const form = useForm<AnalyzePolicyFormValues>({
-    // We'll trigger validation manually, so no resolver here initially
+    resolver: zodResolver(formSchema),
     defaultValues: {
       policyUrl: '',
       policyText: '',
+      activeTab: 'paste',
     },
   });
   
@@ -72,7 +87,6 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
     setAnalysisResult(null);
     setView('form');
     setIsChecking(false);
-    setActiveTab("paste");
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -82,8 +96,8 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
     onOpenChange(open);
   };
 
-  const onTabChange = (value: string) => {
-    setActiveTab(value);
+  const onTabChange = (value: "paste" | "url") => {
+    setValue('activeTab', value, { shouldValidate: true });
     // Clear the other tab's value and errors
     if(value === 'paste') {
         setValue('policyUrl', '');
@@ -96,25 +110,10 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   const onSubmit: SubmitHandler<AnalyzePolicyFormValues> = async (data) => {
     setIsChecking(true);
     setAnalysisResult(null);
-
-    const validationSchema = activeTab === 'paste' ? textSchema : urlSchema;
-    const validationResult = validationSchema.safeParse(data);
-
-    if (!validationResult.success) {
-      // Manually set form errors
-      validationResult.error.errors.forEach((error) => {
-        form.setError(error.path[0] as keyof AnalyzePolicyFormValues, {
-          type: 'manual',
-          message: error.message,
-        });
-      });
-      setIsChecking(false);
-      return;
-    }
     
     // Note: The flow currently doesn't support fetching from URL. 
     // This is handled in the action, which will return an error.
-    if(activeTab === "url" && data.policyUrl) {
+    if(data.activeTab === "url" && data.policyUrl) {
          toast({
             title: 'Feature Not Implemented',
             description: "Fetching from URL is for demonstration purposes. Please paste the policy text.",
@@ -171,7 +170,11 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-                <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+                <Tabs 
+                    value={form.watch('activeTab')} 
+                    onValueChange={(value) => onTabChange(value as "paste" | "url")} 
+                    className="w-full"
+                >
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="paste">Paste Text</TabsTrigger>
                         <TabsTrigger value="url">From URL</TabsTrigger>
@@ -306,5 +309,3 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
 };
 
 export default AnalyzePolicyDialog;
-
-    
