@@ -34,7 +34,7 @@ const CyGuardLogo = ({ className, ...props }: SVGProps<SVGSVGElement>) => (
         <path
             fill="url(#paint4_linear_53_2)"
             d="M45.414 68.136 9.829 45.424v94.425l35.585 22.712V68.136Z"
-ci        />
+        />
         <path
             fillOpacity={0.2}
             d="M81 185.273V233l-71.171-54.847v-38.304L81 185.273Z"
