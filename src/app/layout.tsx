@@ -10,7 +10,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'CyGuard: Your Privacy & Security Chatbot',
   description: 'A smart, privacy-first cybersecurity assistant to help you identify online threats and stay safe. Your conversations are not stored.',
-  icons: null, // This will remove the default favicon
+  // Setting icons to null is good, but we will add a direct link in the head to be more forceful
+  icons: null, 
 };
 
 export default function RootLayout({
@@ -23,7 +24,8 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Inter is loaded via next/font, keep existing links if any other fonts were specified */}
+        {/* Forcefully setting a blank favicon to override cached ones */}
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>" />
       </head>
       <body className={`${inter.variable} font-body antialiased`}>
         <AuthProvider>
