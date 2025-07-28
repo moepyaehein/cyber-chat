@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -17,13 +18,14 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   // === PASTE YOUR CONFIG OBJECT HERE ===
-  // It should look like this:
-  // apiKey: "AIza...",
-  // authDomain: "your-project-id.firebaseapp.com",
-  // projectId: "your-project-id",
-  // storageBucket: "your-project-id.appspot.com",
-  // messagingSenderId: "...",
-  // appId: "1:..."
+  // Using placeholder values to allow the app to run.
+  // Replace these with your actual Firebase project configuration.
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000000000"
 };
 
 
@@ -32,20 +34,20 @@ let app: FirebaseApp;
 let auth: Auth;
 let firestore: Firestore;
 
-if (firebaseConfig.apiKey && getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  firestore = getFirestore(app);
-} else if (getApps().length > 0) {
-  app = getApp();
-  auth = getAuth(app);
-  firestore = getFirestore(app);
-} else {
-    // Provide dummy objects if config is missing to avoid crashes
-    console.error("Firebase config is missing. Please update src/lib/firebase.ts with your project's configuration.");
+if (firebaseConfig.apiKey && firebaseConfig.apiKey.includes('your-project-id')) {
+    console.error("Firebase config is using placeholder values. Please update src/lib/firebase.ts with your project's configuration.");
     app = {} as FirebaseApp;
     auth = {} as Auth;
     firestore = {} as Firestore;
+
+} else if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  firestore = getFirestore(app);
+} else {
+  app = getApp();
+  auth = getAuth(app);
+  firestore = getFirestore(app);
 }
 
 
