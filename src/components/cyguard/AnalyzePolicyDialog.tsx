@@ -36,27 +36,7 @@ const formSchema = z.object({
   policyText: z.string().optional(),
   policyUrl: z.string().optional(),
   activeTab: z.enum(["paste", "url"]),
-}).superRefine((data, ctx) => {
-    if (data.activeTab === 'paste') {
-        if (!data.policyText || data.policyText.length < 100) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['policyText'],
-                message: `Policy text must be at least 100 characters.`,
-            });
-        }
-    }
-    if (data.activeTab === 'url') {
-        if (!data.policyUrl || !z.string().url().safeParse(data.policyUrl).success) {
-             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['policyUrl'],
-                message: `Please enter a valid URL.`,
-            });
-        }
-    }
 });
-
 
 type AnalyzePolicyFormValues = z.infer<typeof formSchema>;
 
@@ -78,9 +58,10 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
       policyText: '',
       activeTab: 'paste',
     },
+    mode: 'onChange',
   });
   
-  const { setValue, trigger, handleSubmit } = form;
+  const { setValue, trigger, handleSubmit, formState: { errors } } = form;
 
   const resetDialogState = () => {
     form.reset();
@@ -97,22 +78,29 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   };
 
   const onTabChange = (value: "paste" | "url") => {
-    setValue('activeTab', value, { shouldValidate: true });
-    // Clear the other tab's value and errors
-    if(value === 'paste') {
-        setValue('policyUrl', '');
-    } else {
-        setValue('policyText', '');
-    }
-    trigger();
+    setValue('activeTab', value, { shouldValidate: false });
+    // Clear errors when switching tabs
+    form.clearErrors();
   }
 
   const onSubmit: SubmitHandler<AnalyzePolicyFormValues> = async (data) => {
+    // Manual validation based on active tab
+    if (data.activeTab === 'paste') {
+        if (!data.policyText || data.policyText.length < 100) {
+            form.setError('policyText', { type: 'manual', message: 'Policy text must be at least 100 characters.' });
+            return;
+        }
+    } else if (data.activeTab === 'url') {
+        const urlCheck = z.string().url().safeParse(data.policyUrl);
+        if (!urlCheck.success) {
+            form.setError('policyUrl', { type: 'manual', message: 'Please enter a valid URL.' });
+            return;
+        }
+    }
+    
     setIsChecking(true);
     setAnalysisResult(null);
     
-    // Note: The flow currently doesn't support fetching from URL. 
-    // This is handled in the action, which will return an error.
     if(data.activeTab === "url" && data.policyUrl) {
          toast({
             title: 'Feature Not Implemented',
