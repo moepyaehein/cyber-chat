@@ -46,13 +46,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (values: z.infer<typeof signupSchema>) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      // Send verification email
-      await sendEmailVerification(userCredential.user);
-      // Log the user out immediately so they have to verify before logging in
-      await firebaseSignOut(auth);
-      return { success: true };
+      
+      // --- START of added verification and logging ---
+      try {
+        await sendEmailVerification(userCredential.user);
+        console.log("Successfully sent verification email.");
+        // Log the user out immediately so they have to verify before logging in
+        await firebaseSignOut(auth);
+        console.log("User signed out, pending verification.");
+        return { success: true };
+      } catch (verificationError) {
+          const error = verificationError as AuthError;
+          console.error("Error during email verification or sign out:", error);
+          // Return a specific error message if verification fails
+          return { success: false, error: `Account created, but failed to send verification email: ${error.message}` };
+      }
+      // --- END of added verification and logging ---
+
     } catch (error) {
       const authError = error as AuthError;
+      console.error("Error creating user account:", authError);
       return { success: false, error: authError.message };
     }
   };
