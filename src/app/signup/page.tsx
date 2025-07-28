@@ -17,6 +17,7 @@ import { signupSchema } from '@/app/(auth)/schemas';
 import { UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import CyGuardLogo from '@/components/cyguard/CyGuardLogo';
 
 const SignUpPage: FC = () => {
   const { signUp, signInWithGoogle } = useAuth();
@@ -66,7 +67,7 @@ const SignUpPage: FC = () => {
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="items-center text-center">
-        <UserPlus className="h-12 w-12 text-primary mb-2" />
+        <CyGuardLogo className="h-12 w-12 text-primary mb-2" />
         <CardTitle className="text-2xl">Create your CyGuard Account</CardTitle>
         <CardDescription>Join CyGuard to enhance your cybersecurity.</CardDescription>
       </CardHeader>
