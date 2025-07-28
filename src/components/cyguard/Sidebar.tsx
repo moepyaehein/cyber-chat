@@ -2,7 +2,6 @@
 "use client";
 
 import type { FC } from "react";
-import { useState } from "react";
 import Link from 'next/link';
 import {
   Sidebar as ShadSidebar,
@@ -12,23 +11,14 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  SidebarSeparator,
-  SidebarGroup,
-  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Shield, FileWarning, ScanLine, BrainCircuit, LogOut, LogIn, GraduationCap, Home, Wifi, ShieldHalf, ShieldCheck, FileText } from "lucide-react";
+import { Shield, LogOut, LogIn, GraduationCap, Home, Wrench } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
-import ReportPhishingDialog from "./ReportPhishingDialog";
-import ScanLogsDialog from "./ScanLogsDialog";
-import ThreatIntelDialog from "./ThreatIntelDialog";
-import WifiHunterDialog from "./WifiHunterDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePathname } from "next/navigation";
-import AnalyzeScreenshotDialog from "./AnalyzeScreenshotDialog";
-import DataBreachCheckDialog from "./DataBreachCheckDialog";
-import AnalyzePolicyDialog from "./AnalyzePolicyDialog";
+
 
 interface SidebarProps {}
 
@@ -36,42 +26,7 @@ const Sidebar: FC<SidebarProps> = () => {
   const { toast } = useToast();
   const { user, signOut, loading } = useAuth();
   const pathname = usePathname();
-  const [isReportPhishingOpen, setIsReportPhishingOpen] = useState(false);
-  const [isScanLogsOpen, setIsScanLogsOpen] = useState(false);
-  const [isThreatIntelOpen, setIsThreatIntelOpen] = useState(false);
-  const [isWifiHunterOpen, setIsWifiHunterOpen] = useState(false);
-  const [isAnalyzeScreenshotOpen, setIsAnalyzeScreenshotOpen] = useState(false);
-  const [isDataBreachCheckOpen, setIsDataBreachCheckOpen] = useState(false);
-  const [isAnalyzePolicyOpen, setIsAnalyzePolicyOpen] = useState(false);
-
-  const handleQuickAction = (action: string) => {
-    if (!user) {
-        toast({ title: "Authentication Required", description: "Please log in to use this feature.", variant: "destructive" });
-        return;
-    }
-    if (action === "Report Phishing") {
-      setIsReportPhishingOpen(true);
-    } else if (action === "Scan Logs") {
-      setIsScanLogsOpen(true);
-    } else if (action === "Threat Intel") {
-      setIsThreatIntelOpen(true);
-    } else if (action === "Wi-Fi Hunter") {
-      setIsWifiHunterOpen(true);
-    } else if (action === "Analyze Screenshot") {
-      setIsAnalyzeScreenshotOpen(true);
-    } else if (action === "Data Breach Check") {
-        setIsDataBreachCheckOpen(true);
-    } else if (action === "Analyze Policy") {
-        setIsAnalyzePolicyOpen(true);
-    }
-     else {
-      toast({
-        title: "Action Triggered",
-        description: `${action} action has been initiated.`,
-      });
-    }
-  };
-
+  
   const handleLogout = async () => {
     await signOut();
     toast({ title: "Logged Out", description: "You have been successfully logged out."});
@@ -102,6 +57,17 @@ const Sidebar: FC<SidebarProps> = () => {
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <Link href="/tools" legacyBehavior passHref>
+                        <SidebarMenuButton
+                        isActive={pathname.startsWith('/tools')}
+                        tooltip={{children: "Tools", side: "right", align:"center"}}
+                        >
+                        <Wrench />
+                        <span>Tools</span>
+                        </SidebarMenuButton>
+                    </Link>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                     <Link href="/knowledge" legacyBehavior passHref>
                         <SidebarMenuButton
@@ -113,66 +79,6 @@ const Sidebar: FC<SidebarProps> = () => {
                         </SidebarMenuButton>
                     </Link>
                 </SidebarMenuItem>
-                
-                <SidebarSeparator />
-                
-                <SidebarGroup>
-                    <SidebarGroupLabel>Tools</SidebarGroupLabel>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Report Phishing")}
-                        tooltip={{children: "Report Phishing", side: "right", align:"center"}}
-                        >
-                        <FileWarning />
-                        <span>Report Phishing</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Wi-Fi Hunter")}
-                        tooltip={{children: "Wi-Fi Hunter", side: "right", align:"center"}}
-                        >
-                        <Wifi />
-                        <span>Wi-Fi Hunter</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Data Breach Check")}
-                        tooltip={{children: "Data Breach Check", side: "right", align:"center"}}
-                        >
-                        <ShieldCheck />
-                        <span>Data Breach Check</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Analyze Policy")}
-                        tooltip={{children: "Analyze Policy", side: "right", align:"center"}}
-                        >
-                        <FileText />
-                        <span>Analyze Policy</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Scan Logs")}
-                        tooltip={{children: "Scan Logs", side: "right", align:"center"}}
-                        >
-                        <ScanLine />
-                        <span>Scan Logs</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                        onClick={() => handleQuickAction("Threat Intel")}
-                        tooltip={{children: "Threat Intel", side: "right", align:"center"}}
-                        >
-                        <BrainCircuit />
-                        <span>Threat Intel</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarGroup>
             </SidebarMenu>
           )}
           {!user && !loading && (
@@ -207,38 +113,6 @@ const Sidebar: FC<SidebarProps> = () => {
            )}
         </SidebarFooter>
       </ShadSidebar>
-
-      <ReportPhishingDialog
-        isOpen={isReportPhishingOpen}
-        onOpenChange={setIsReportPhishingOpen}
-      />
-      <ScanLogsDialog
-        isOpen={isScanLogsOpen}
-        onOpenChange={setIsScanLogsOpen}
-      />
-      <ThreatIntelDialog
-        isOpen={isThreatIntelOpen}
-        onOpenChange={setIsThreatIntelOpen}
-      />
-      <WifiHunterDialog
-        isOpen={isWifiHunterOpen}
-        onOpenChange={setIsWifiHunterOpen}
-      />
-      <AnalyzeScreenshotDialog
-        isOpen={isAnalyzeScreenshotOpen}
-        onOpenChange={setIsAnalyzeScreenshotOpen}
-        onAnalysisComplete={() => {
-            // This is now handled inside the chat interface
-        }}
-      />
-       <DataBreachCheckDialog
-        isOpen={isDataBreachCheckOpen}
-        onOpenChange={setIsDataBreachCheckOpen}
-      />
-      <AnalyzePolicyDialog
-        isOpen={isAnalyzePolicyOpen}
-        onOpenChange={setIsAnalyzePolicyOpen}
-      />
     </>
   );
 };
