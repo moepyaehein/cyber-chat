@@ -149,7 +149,7 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
 
         {view === 'result' && analysisResult && (
           <>
-            <DialogHeader className="text-center items-center pb-4 border-b">
+            <DialogHeader className="flex-shrink-0 text-center items-center pb-4 border-b">
                 <div className="w-full">
                     <div className="flex justify-between items-center mb-1">
                         <DialogTitle className="text-xl">
@@ -169,7 +169,7 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
                 {analysisResult.overallSummary}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-grow overflow-y-auto">
                 <ScrollArea className="h-full pr-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                     <Card className="bg-green-500/10 border-green-500/20">
@@ -217,7 +217,7 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
                   </Card>
                 </ScrollArea>
             </div>
-            <DialogFooter className="mt-auto pt-4 border-t">
+            <DialogFooter className="flex-shrink-0 mt-auto pt-4 border-t">
               <Button type="button" onClick={resetDialogState}>Analyze Another</Button>
               <DialogClose asChild>
                 <Button type="button" variant="outline">Close</Button>
