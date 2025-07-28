@@ -20,12 +20,12 @@ const firebaseConfig = {
   // === PASTE YOUR CONFIG OBJECT HERE ===
   // Using placeholder values to allow the app to run.
   // Replace these with your actual Firebase project configuration.
-  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000"
+  apiKey: "AIzaSyAvFsbmSA2tePqrung4AApr39VMdyBtGAI",
+  authDomain: "cyguard-your-cyber-guardian.firebaseapp.com",
+  projectId: "cyguard-your-cyber-guardian",
+  storageBucket: "cyguard-your-cyber-guardian.appspot.com",
+  messagingSenderId: "16367383299",
+  appId: "1:16367383299:web:d133cb2c9d8c3403b06f36"
 };
 
 

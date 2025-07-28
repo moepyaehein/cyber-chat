@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'CyGuard: Your Privacy & Security Chatbot',
   description: 'A smart, privacy-first cybersecurity assistant to help you identify online threats and stay safe. Your conversations are not stored.',
+  icons: null, // This will remove the default favicon
 };
 
 export default function RootLayout({
