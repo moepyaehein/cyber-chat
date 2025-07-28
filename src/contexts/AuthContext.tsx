@@ -3,7 +3,7 @@
 
 import type { ReactNode, Dispatch, SetStateAction } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { type User, onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, type AuthError, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { type User, onAuthStateChanged, signOut as firebaseSignOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, type AuthError, GoogleAuthProvider, signInWithPopup, sendEmailVerification } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import type { z } from 'zod';
@@ -34,7 +34,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentUser);
       setLoading(false);
       if (currentUser) {
-        router.push('/home');
+        // Only redirect if email is verified or if they used a provider that guarantees it (like Google)
+        if (currentUser.emailVerified || currentUser.providerData.some(p => p.providerId !== 'password')) {
+            router.push('/home');
+        }
       }
     });
     return () => unsubscribe();
@@ -42,7 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (values: z.infer<typeof signupSchema>) => {
     try {
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // Send verification email
+      await sendEmailVerification(userCredential.user);
       // User will be set by onAuthStateChanged, and effect will redirect
       return { success: true };
     } catch (error) {

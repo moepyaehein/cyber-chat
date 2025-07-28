@@ -16,10 +16,12 @@ import type { SignupFormData } from '@/app/(auth)/schemas';
 import { signupSchema } from '@/app/(auth)/schemas';
 import { UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 const SignUpPage: FC = () => {
   const { signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -34,14 +36,19 @@ const SignUpPage: FC = () => {
 
   const onSubmit: SubmitHandler<SignupFormData> = async (data) => {
     const result = await signUp(data);
-    if (!result.success && result.error) {
+    if (result.success) {
+      toast({
+        title: 'Account Created Successfully!',
+        description: "We've sent a verification link to your email. Please check your inbox to complete the signup.",
+      });
+      router.push('/signin'); // Redirect to sign-in page after showing the message
+    } else if (result.error) {
       toast({
         title: 'Sign Up Failed',
         description: result.error,
         variant: 'destructive',
       });
     }
-    // On success, AuthContext handles redirect
   };
 
   const handleGoogleSignIn = async () => {
