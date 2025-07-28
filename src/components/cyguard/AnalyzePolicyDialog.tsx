@@ -33,16 +33,17 @@ import { Progress } from "../ui/progress";
 import { cn } from "@/lib/utils";
 
 
-const analyzePolicySchema = z.object({
-  policyUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')),
-  policyText: z.string().min(100, { message: "Policy text must be at least 100 characters." }).optional().or(z.literal('')),
-}).refine(data => data.policyUrl || data.policyText, {
-  message: "Please provide either a URL or paste the policy text.",
-  path: ["policyText"], // Assign error to a specific field for display
+const textSchema = z.object({
+  policyText: z.string().min(100, { message: "Policy text must be at least 100 characters." }),
+  policyUrl: z.string().optional(),
 });
 
+const urlSchema = z.object({
+  policyUrl: z.string().url({ message: "Please enter a valid URL." }),
+  policyText: z.string().optional(),
+});
 
-type AnalyzePolicyFormValues = z.infer<typeof analyzePolicySchema>;
+type AnalyzePolicyFormValues = z.infer<typeof textSchema> | z.infer<typeof urlSchema>;
 
 interface AnalyzePolicyDialogProps {
   isOpen: boolean;
@@ -57,14 +58,14 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   const [activeTab, setActiveTab] = useState("paste");
 
   const form = useForm<AnalyzePolicyFormValues>({
-    resolver: zodResolver(analyzePolicySchema),
+    // We'll trigger validation manually, so no resolver here initially
     defaultValues: {
       policyUrl: '',
       policyText: '',
     },
   });
   
-  const { setValue, trigger } = form;
+  const { setValue, trigger, handleSubmit } = form;
 
   const resetDialogState = () => {
     form.reset();
@@ -95,6 +96,21 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
   const onSubmit: SubmitHandler<AnalyzePolicyFormValues> = async (data) => {
     setIsChecking(true);
     setAnalysisResult(null);
+
+    const validationSchema = activeTab === 'paste' ? textSchema : urlSchema;
+    const validationResult = validationSchema.safeParse(data);
+
+    if (!validationResult.success) {
+      // Manually set form errors
+      validationResult.error.errors.forEach((error) => {
+        form.setError(error.path[0] as keyof AnalyzePolicyFormValues, {
+          type: 'manual',
+          message: error.message,
+        });
+      });
+      setIsChecking(false);
+      return;
+    }
     
     // Note: The flow currently doesn't support fetching from URL. 
     // This is handled in the action, which will return an error.
@@ -154,7 +170,7 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
                 <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="paste">Paste Text</TabsTrigger>
@@ -290,3 +306,5 @@ const AnalyzePolicyDialog: FC<AnalyzePolicyDialogProps> = ({ isOpen, onOpenChang
 };
 
 export default AnalyzePolicyDialog;
+
+    
